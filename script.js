@@ -1,12 +1,13 @@
 // ---------------- Cart Logic ----------------
 let cart = JSON.parse(localStorage.getItem("manaCart")) || [];
 let cakes = JSON.parse(localStorage.getItem("cakesData")) || [];
+let tempCakes = JSON.parse(sessionStorage.getItem("tempCakes")) || [];
 let isAdmin = localStorage.getItem("isAdmin") === "true";
 const whatsappNumber = "919441269096";
 
 // ---------------- Cart Functions ----------------
 function addToCart(name, price){
-  let item = cart.find(c=>c.name===name);
+  let item = cart.find(c => c.name === name);
   if(item) item.qty++;
   else cart.push({name, price, qty:1});
   saveCart();
@@ -71,7 +72,7 @@ function adminLogout(){
 }
 
 // ---------------- Cake Functions ----------------
-function saveNewCake(){
+function saveNewCake(permanent=true){
   let name = document.getElementById("cakeName").value.trim();
   let price = parseFloat(document.getElementById("cakePrice").value);
   let file = document.getElementById("cakeImage");
@@ -81,8 +82,16 @@ function saveNewCake(){
 
   let reader = new FileReader();
   reader.onload = function(e){
-    cakes.push({name, price, img:e.target.result});
-    localStorage.setItem("cakesData", JSON.stringify(cakes));
+    const newCake = {name, price, img:e.target.result};
+    
+    if(permanent){
+      cakes.push(newCake);
+      localStorage.setItem("cakesData", JSON.stringify(cakes));
+    } else {
+      tempCakes.push(newCake);
+      sessionStorage.setItem("tempCakes", JSON.stringify(tempCakes));
+    }
+
     renderCakes();
     document.getElementById("addCakeForm").style.display="none";
     document.getElementById("cakeName").value="";
@@ -94,8 +103,13 @@ function saveNewCake(){
 
 function deleteCake(i){
   if(confirm("Delete this cake?")){
-    cakes.splice(i,1);
-    localStorage.setItem("cakesData", JSON.stringify(cakes));
+    if(i < cakes.length){
+      cakes.splice(i,1);
+      localStorage.setItem("cakesData", JSON.stringify(cakes));
+    } else {
+      tempCakes.splice(i - cakes.length,1);
+      sessionStorage.setItem("tempCakes", JSON.stringify(tempCakes));
+    }
     renderCakes();
   }
 }
@@ -121,7 +135,7 @@ function renderCake(cake, index){
 function renderCakes(){
   let container = document.getElementById("cakesContainer");
   container.innerHTML="";
-  cakes.forEach((c,i)=>renderCake(c,i));
+  [...cakes,...tempCakes].forEach((c,i)=> renderCake(c,i));
   if(isAdmin){
     let add = document.createElement("div");
     add.className="add-card";
