@@ -3,190 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Order - Mana Cakes Kuppam</title>
+  <title>Place Order - Mana Cakes</title>
   <style>
-    body { font-family: Arial, sans-serif; padding:20px; }
+    body { font-family: Arial, sans-serif; margin:20px; background:#fff8f9; }
     h2 { color:#ff4081; }
-    #map { height:300px; width:100%; margin-top:20px; border-radius:8px; }
-    .order-box { border:1px solid #ddd; padding:15px; border-radius:8px; margin-bottom:20px; }
-    .order-item { margin-bottom:8px; }
-    .total { font-weight:bold; margin-top:12px; }
-    .form-group { margin-top:12px; }
-    label { display:block; margin-bottom:5px; font-weight:bold; }
-    input, select, textarea { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
-    textarea { resize: vertical; }
-    .btn-confirm {
-      background:#25d366; 
-      color:white; 
-      padding:12px 20px; 
-      border:none; 
-      border-radius:8px; 
-      cursor:pointer; 
-      font-size:16px;
-      display:block;
-      margin-top:20px;
-      text-align:center;
-    }
-    .btn-confirm:hover { background:#1ebd5a; }
-    .note { color:red; font-size:14px; }
-    .upi-btn {
-      background:#ff4081;
-      color:white;
-      padding:10px;
-      border-radius:6px;
-      text-decoration:none;
-      display:inline-block;
-      margin-top:10px;
-    }
+    .order-box { border:1px solid #ccc; padding:15px; border-radius:8px; margin:15px 0; background:white; }
+    label { display:block; margin-top:10px; }
+    input, select { padding:8px; width:100%; margin-top:4px; border:1px solid #ccc; border-radius:6px; }
+    button { background:#ff4081; color:white; padding:10px 15px; border:none; border-radius:6px; margin-top:15px; cursor:pointer; }
+    button:hover { background:#e33771; }
+    .summary { margin-top:15px; background:#fdf0f5; padding:10px; border-radius:6px; }
   </style>
 </head>
 <body>
 
-<h2>🛒 Your Order</h2>
-<div class="order-box" id="orderDetails"></div>
+<h2>🛒 Confirm Your Order</h2>
 
-<h2>👤 Customer Details</h2>
+<div id="orderDetails" class="order-box"></div>
+
 <div class="order-box">
-  <div class="form-group">
-    <label for="custName">Name:</label>
-    <input type="text" id="custName" placeholder="Enter your name" required>
-  </div>
-  <div class="form-group">
-    <label for="custPhone">Phone Number:</label>
-    <input type="tel" id="custPhone" placeholder="Enter your phone number" required>
-  </div>
-  <div class="form-group">
-    <label for="custAddress">Address:</label>
-    <textarea id="custAddress" rows="3" placeholder="Enter your full delivery address"></textarea>
-  </div>
-  <div class="form-group">
-    <label>Payment Method:</label>
-    <input type="radio" name="payment" value="UPI" checked> UPI (Full Payment)<br>
-    <input type="radio" name="payment" value="COD"> Cash on Delivery (₹150 advance required)
-    <p class="note">⚠️ COD requires ₹150 advance before delivery.</p>
-  </div>
-  <div id="upiSection" style="display:none;">
-    <p>💳 Pay via UPI:</p>
-    <a href="upi://pay?pa=mana-cakes@upi&pn=Mana%20Cakes%20Kuppam&am=0&cu=INR" class="upi-btn">Pay Owner UPI</a>
-  </div>
-</div>
+  <h3>Customer Details</h3>
+  <label>Name:</label>
+  <input type="text" id="custName">
 
-<h2>📍 Delivery Location</h2>
-<div id="map"></div>
-<div class="order-box">
-  <div id="deliveryCharge">Calculating delivery charge...</div>
-</div>
+  <label>Phone:</label>
+  <input type="text" id="custPhone">
 
-<button class="btn-confirm" onclick="confirmOrder()">✅ Confirm Order via WhatsApp</button>
+  <label>Delivery Type:</label>
+  <select id="deliveryType" onchange="toggleDistance()">
+    <option value="pickup">Self Pickup</option>
+    <option value="delivery">Home Delivery (within 5 km)</option>
+  </select>
+
+  <div id="distanceBox" style="display:none;">
+    <label>Distance from Kuppam Bus Stand (km):</label>
+    <input type="number" id="distance" placeholder="Enter distance in km">
+  </div>
+
+  <div class="summary" id="summaryBox"></div>
+
+  <button onclick="placeOrder()">Place Order via WhatsApp</button>
+</div>
 
 <script>
-function getQueryParam(name){
+const whatsappNumber = "919441269096"; // Owner number
+let cart = [];
+
+function loadCart(){
   let urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(name);
+  if(urlParams.has("items")){
+    cart = JSON.parse(urlParams.get("items"));
+  }
+  let details = document.getElementById("orderDetails");
+  let html = "<h3>Items</h3>";
+  cart.forEach(item=>{
+    html += `<p>${item.name} × ${item.qty} = ₹${item.price * item.qty}</p>`;
+  });
+  details.innerHTML = html;
+
+  // Auto-fill from login (localStorage)
+  let user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if(user){
+    document.getElementById("custName").value = user.name;
+    document.getElementById("custPhone").value = user.phone;
+  }
 }
 
-// Parse data
-let data = JSON.parse(decodeURIComponent(getQueryParam("data")));
-let items = data.items;
-let location = data.location;
-
-// Show order items (Product name + price + qty)
-let detailsDiv = document.getElementById("orderDetails");
-let total = 0;
-let orderText = "🛒 Order Details:\n";
-items.forEach(item=>{
-  detailsDiv.innerHTML += `<div class="order-item">🍰 ${item.name} (₹${item.price}) x${item.qty} = ₹${item.price * item.qty}</div>`;
-  orderText += `🍰 ${item.name} (₹${item.price}) x${item.qty} = ₹${item.price * item.qty}\n`;
-  total += item.price * item.qty;
-});
-detailsDiv.innerHTML += `<div class="total">Subtotal: ₹${total}</div>`;
-orderText += `\n💰 Subtotal = ₹${total}\n`;
-
-// Delivery calculation
-let deliveryCharge = 0;
-let deliveryText = "";
-function calculateDeliveryCharge(){
-  let bakery = { lat: 12.7480, lng: 78.3430 }; 
-  let service = new google.maps.DistanceMatrixService();
-  service.getDistanceMatrix(
-    {
-      origins: [bakery],
-      destinations: [{lat: location.lat, lng: location.lon}],
-      travelMode: 'DRIVING'
-    },
-    function(response, status){
-      if(status === "OK"){
-        let distanceText = response.rows[0].elements[0].distance.text;
-        let distanceKm = parseFloat(distanceText);
-        if(distanceKm <= 1){
-          deliveryCharge = 0;
-          deliveryText = "Free Delivery";
-        } else {
-          deliveryCharge = Math.ceil(distanceKm * 10);
-          deliveryText = `₹${deliveryCharge}`;
-        }
-        document.getElementById("deliveryCharge").innerHTML = `🚚 Delivery Charge: ${deliveryText} (${distanceText})`;
-      } else {
-        document.getElementById("deliveryCharge").innerHTML = "⚠️ Unable to calculate delivery charge.";
-      }
-    }
-  );
+function toggleDistance(){
+  let type = document.getElementById("deliveryType").value;
+  document.getElementById("distanceBox").style.display = (type==="delivery") ? "block" : "none";
 }
 
-// Confirm Order
-function confirmOrder(){
+function placeOrder(){
   let name = document.getElementById("custName").value.trim();
   let phone = document.getElementById("custPhone").value.trim();
-  let address = document.getElementById("custAddress").value.trim();
-  let payment = document.querySelector('input[name="payment"]:checked').value;
+  let type = document.getElementById("deliveryType").value;
+  let distance = parseFloat(document.getElementById("distance").value) || 0;
 
-  if(!name || !phone){
-    alert("⚠️ Please enter your name and phone number to confirm order.");
+  if(!name || !phone){ alert("Enter name & phone"); return; }
+  if(type==="delivery" && distance>5){
+    alert("🚫 Delivery not available beyond 5 km from Kuppam Bus Stand.");
     return;
   }
 
-  let finalTotal = total + deliveryCharge;
-  let advanceNote = "";
-  if(payment === "COD"){
-    advanceNote = "⚠️ COD requires ₹150 advance.\n";
+  let cartText = cart.map(i=>`${i.name} × ${i.qty} (₹${i.price} each)`).join(", ");
+  let subtotal = cart.reduce((sum,i)=> sum + i.price*i.qty, 0);
+  let deliveryCharge = 0;
+  if(type==="delivery"){
+    if(distance<=1){ deliveryCharge = 0; }
+    else { deliveryCharge = distance * 10; }
   }
+  let total = subtotal + deliveryCharge;
 
-  let mapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
-  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n🏠 Address: ${address}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ${deliveryText}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
+  // Summary update
+  document.getElementById("summaryBox").innerHTML = `
+    <b>Subtotal:</b> ₹${subtotal}<br>
+    <b>Delivery:</b> ₹${deliveryCharge}<br>
+    <b>Total:</b> ₹${total}
+  `;
 
-  let whatsappURL = `https://wa.me/919441269096?text=${encodeURIComponent(msg)}`;
-  window.open(whatsappURL, "_blank");
+  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nDistance: ${distance} km`;
+  let url = "https://wa.me/"+whatsappNumber+"?text=" + encodeURIComponent(msg);
+  window.open(url,"_blank");
 }
 
-// Show UPI link when UPI selected
-document.querySelectorAll('input[name="payment"]').forEach(radio=>{
-  radio.addEventListener("change", function(){
-    if(this.value === "UPI"){
-      document.getElementById("upiSection").style.display = "block";
-    } else {
-      document.getElementById("upiSection").style.display = "none";
-    }
-  });
-});
-
-// Google Maps
-function initMap(){
-  let userLoc = { lat: location.lat, lng: location.lon };
-  let map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 15,
-    center: userLoc
-  });
-  new google.maps.Marker({
-    position: userLoc,
-    map: map,
-    title: "Delivery Location"
-  });
-  calculateDeliveryCharge();
-}
+window.onload = loadCart;
 </script>
-
-<!-- Google Maps API -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>
 
 </body>
 </html>
