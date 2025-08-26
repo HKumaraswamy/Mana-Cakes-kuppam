@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Place Order - Mana Cakes</title>
   <style>
-    body { font-family: Arial, sans-serif; margin:20px; background:#fff8f9; }
-    h2 { color:#ff4081; }
-    .order-box { border:1px solid #ccc; padding:15px; border-radius:8px; margin:15px 0; background:white; }
-    label { display:block; margin-top:10px; }
-    input, select { padding:8px; width:100%; margin-top:4px; border:1px solid #ccc; border-radius:6px; }
-    button { background:#ff4081; color:white; padding:10px 15px; border:none; border-radius:6px; margin-top:15px; cursor:pointer; }
-    button:hover { background:#e33771; }
-    .summary { margin-top:15px; background:#fdf0f5; padding:10px; border-radius:6px; }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #fff8f9; }
+    h2 { color: #ff4081; }
+    .order-box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin: 15px 0; background: white; }
+    label { display: block; margin-top: 10px; }
+    input, select { padding: 8px; width: 100%; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; }
+    button { background: #ff4081; color: white; padding: 10px 15px; border: none; border-radius: 6px; margin-top: 15px; cursor: pointer; }
+    button:hover { background: #e33771; }
+    .summary { margin-top: 15px; background: #fdf0f5; padding: 10px; border-radius: 6px; }
+    a { text-decoration: none; }
   </style>
 </head>
 <body>
@@ -35,7 +36,7 @@
     <option value="delivery">Home Delivery (within 5 km)</option>
   </select>
 
-  <div id="distanceBox" style="display:none;">
+  <div id="distanceBox" style="display: none;">
     <label>Distance from Kuppam Bus Stand (km):</label>
     <input type="number" id="distance" placeholder="Enter distance in km">
   </div>
@@ -46,9 +47,9 @@
     <option value="upi">UPI (Google Pay / PhonePe / Paytm)</option>
   </select>
 
-  <div id="upiBox" style="display:none; margin-top:10px; background:#f9f9f9; padding:10px; border-radius:6px;">
+  <div id="upiBox" style="display: none; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 6px;">
     <p>📲 Pay securely using UPI:</p>
-    <a id="upiLink" href="#" target="_blank" style="color:blue; font-weight:bold;">Pay Now</a>
+    <a id="upiLink" href="#" target="_blank" style="color: blue; font-weight: bold;">Pay Now</a>
   </div>
 
   <div class="summary" id="summaryBox"></div>
@@ -57,38 +58,40 @@
 </div>
 
 <script>
-const whatsappNumber = "919441269096"; // Owner number
-const upiID = "yourupiid@upi";  // 🔗 Replace with your UPI ID
+const whatsappNumber = "919441269096";
+const upiID = "6281187177@ybl";
+const loggerURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // ⬅️ Replace with your Google Apps Script URL
+
 let cart = [];
 
-function loadCart(){
+function loadCart() {
   let urlParams = new URLSearchParams(window.location.search);
-  if(urlParams.has("items")){
+  if (urlParams.has("items")) {
     cart = JSON.parse(urlParams.get("items"));
   }
+
   let details = document.getElementById("orderDetails");
   let html = "<h3>Items</h3>";
-  cart.forEach(item=>{
+  cart.forEach(item => {
     html += `<p>${item.name} × ${item.qty} = ₹${item.price * item.qty}</p>`;
   });
   details.innerHTML = html;
 
-  // Auto-fill from login (localStorage)
   let user = JSON.parse(localStorage.getItem("loggedInUser"));
-  if(user){
+  if (user) {
     document.getElementById("custName").value = user.name;
     document.getElementById("custPhone").value = user.phone;
   }
 }
 
-function toggleDistance(){
+function toggleDistance() {
   let type = document.getElementById("deliveryType").value;
-  document.getElementById("distanceBox").style.display = (type==="delivery") ? "block" : "none";
+  document.getElementById("distanceBox").style.display = (type === "delivery") ? "block" : "none";
 }
 
-function toggleUPI(){
+function toggleUPI() {
   let type = document.getElementById("paymentType").value;
-  document.getElementById("upiBox").style.display = (type==="upi") ? "block" : "none";
+  document.getElementById("upiBox").style.display = (type === "upi") ? "block" : "none";
 }
 
 function placeOrder() {
@@ -110,97 +113,68 @@ function placeOrder() {
 
   let cartText = cart.map(i => `${i.name} × ${i.qty} (₹${i.price} each)`).join(", ");
   let subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  let deliveryCharge = 0;
-  if (type === "delivery") {
-    deliveryCharge = distance <= 1 ? 0 : distance * 10;
-  }
+  let deliveryCharge = (type === "delivery") ? (distance <= 1 ? 0 : distance * 10) : 0;
   let total = subtotal + deliveryCharge;
 
-  // Check for self pickup prepayment requirement
-  if (type === "pickup" && total < 50) {
-    let prepayAmount = 50;
-    let upiUrl = `upi://pay?pa=6281187177@ybl&pn=ManaCakes&am=${prepayAmount}&cu=INR`;
-    document.getElementById("upiBox").style.display = "block";
-    document.getElementById("upiLink").href = upiUrl;
-    document.getElementById("summaryBox").innerHTML = `
+  let upiAdvance = 50;
+  let advanceUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${upiAdvance}&cu=INR`;
+  let fullUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${total}&cu=INR`;
+
+  let upiBox = document.getElementById("upiBox");
+  let upiLink = document.getElementById("upiLink");
+  let summaryBox = document.getElementById("summaryBox");
+
+  // Require ₹50 advance for Pickup or COD if total < ₹50
+  if ((type === "pickup" || payType === "cod") && total < 50) {
+    upiBox.style.display = "block";
+    upiLink.href = advanceUpiUrl;
+    summaryBox.innerHTML = `
       <b>Subtotal:</b> ₹${subtotal}<br>
-      <b>Total:</b> ₹${total}<br>
-      ⚠️ <b>Note:</b> Self pickup orders below ₹50 require advance payment of ₹50.<br>
-      👉 <a href="${upiUrl}" target="_blank" style="color:blue; font-weight:bold;">Click here to Pay ₹50 via UPI</a><br>
-      After payment, please contact us on WhatsApp to confirm.
+      <b>Delivery:</b> ₹${deliveryCharge}<br>
+      <b>Total:</b> ₹${total}<br><br>
+      ⚠️ <b>Note:</b> ₹50 advance payment required for this order.<br>
+      👉 <a href="${advanceUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹50 via UPI</a><br>
+      After payment, please contact us on WhatsApp.
     `;
-    return; // Stop here until payment is done
-  }
-
-  // Generate UPI link if needed
-  let upiAmount = total;
-  let upiUrl = `upi://pay?pa=6281187177@ybl&pn=ManaCakes&am=${upiAmount}&cu=INR`;
-  if (payType === "upi") {
-    document.getElementById("upiBox").style.display = "block";
-    document.getElementById("upiLink").href = upiUrl;
-  }
-
-  // Update order summary
-  document.getElementById("summaryBox").innerHTML = `
-    <b>Subtotal:</b> ₹${subtotal}<br>
-    <b>Delivery:</b> ₹${deliveryCharge}<br>
-    <b>Total:</b> ₹${total}<br>
-    <b>Payment:</b> ${payType === "upi" ? "UPI" : "Cash"}
-  `;
-
-  // WhatsApp Message
-  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDistance: ${distance} km`;
-  let url = "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(msg);
-
-  // Open WhatsApp order link
-  window.open(url, "_blank");
-
-  // If payment is via UPI, open payment link too
-  if (payType === "upi") {
-    window.open(upiUrl, "_blank");
-  }
-}
-function placeOrder(){
-  let name = document.getElementById("custName").value.trim();
-  let phone = document.getElementById("custPhone").value.trim();
-  let type = document.getElementById("deliveryType").value;
-  let payType = document.getElementById("paymentType").value;
-  let distance = parseFloat(document.getElementById("distance").value) || 0;
-
-  if(!name || !phone){ alert("Enter name & phone"); return; }
-  if(type==="delivery" && distance>5){
-    alert("🚫 Delivery not available beyond 5 km from Kuppam Bus Stand.");
     return;
   }
 
-  let cartText = cart.map(i=>`${i.name} × ${i.qty} (₹${i.price} each)`).join(", ");
-  let subtotal = cart.reduce((sum,i)=> sum + i.price*i.qty, 0);
-  let deliveryCharge = 0;
-  if(type==="delivery"){
-    if(distance<=1){ deliveryCharge = 0; }
-    else { deliveryCharge = distance * 10; }
+  // Show UPI box and open UPI if full UPI selected
+  if (payType === "upi") {
+    upiBox.style.display = "block";
+    upiLink.href = fullUpiUrl;
+    window.open(fullUpiUrl, "_blank");
   }
-  let total = subtotal + deliveryCharge;
 
-  // UPI link update
-  let upiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${total}&cu=INR`;
-  document.getElementById("upiLink").href = upiUrl;
+  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDelivery Type: ${type}\nDistance: ${distance} km`;
+  let waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, "_blank");
 
-  // Summary update
-  document.getElementById("summaryBox").innerHTML = `
-    <b>Subtotal:</b> ₹${subtotal}<br>
-    <b>Delivery:</b> ₹${deliveryCharge}<br>
-    <b>Total:</b> ₹${total}<br>
-    <b>Payment:</b> ${payType==="upi" ? "UPI" : "Cash"}
+  // Log to Google Sheets
+  fetch(loggerURL, {
+    method: "POST",
+    body: JSON.stringify({
+      name: name,
+      phone: phone,
+      items: cartText,
+      total: total,
+      deliveryType: type,
+      paymentType: payType,
+      distance: distance,
+      notes: (type === "pickup" || payType === "cod") && total < 50 ? "Advance Required" : "Normal"
+    }),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  // Show Success screen
+  document.body.innerHTML = `
+    <div style="text-align:center; padding:40px;">
+      <h2>✅ Order Placed!</h2>
+      <p>Thank you, <b>${name}</b>. We’ve received your order details.</p>
+      <p>We will confirm it shortly via WhatsApp 📱.</p>
+      <a href="/" style="color:#ff4081;">⬅️ Back to Home</a>
+    </div>
   `;
-
-  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDistance: ${distance} km`;
-  let url = "https://wa.me/"+whatsappNumber+"?text=" + encodeURIComponent(msg);
-  window.open(url,"_blank");
-
-  if(payType==="upi"){ 
-    window.open(upiUrl,"_blank"); 
-  }
 }
 
 window.onload = loadCart;
