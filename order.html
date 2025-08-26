@@ -5,69 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Place Order - Mana Cakes</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #fff8f9; }
-    h2 { color: #ff4081; }
-    .order-box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin: 15px 0; background: white; }
-    label { display: block; margin-top: 10px; }
-    input, select { padding: 8px; width: 100%; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; }
-    button { background: #ff4081; color: white; padding: 10px 15px; border: none; border-radius: 6px; margin-top: 15px; cursor: pointer; }
-    button:hover { background: #e33771; }
-    .summary { margin-top: 15px; background: #fdf0f5; padding: 10px; border-radius: 6px; }
-    .welcome { margin-bottom: 10px; font-weight: bold; color: #444; }
-    .logout-btn { background: #777; margin-left: 10px; }
-    a { text-decoration: none; }
+    body { font-family: Arial, sans-serif; margin:20px; background:#fff8f9; }
+    h2 { color:#ff4081; }
+    .box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); max-width:600px; margin:auto; }
+    label { font-weight:bold; display:block; margin-top:10px; }
+    input, select { width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:5px; }
+    button { margin-top:15px; padding:10px 15px; border:none; border-radius:5px; cursor:pointer; }
+    #summaryBox { margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:8px; background:#fdfdfd; }
+    .welcome { margin-bottom:10px; font-weight:bold; }
+    .logout-btn { background:#777; color:white; padding:5px 10px; border:none; border-radius:5px; cursor:pointer; margin-left:10px; }
   </style>
 </head>
 <body>
+  <div class="box">
+    <h2>🛒 Confirm Your Order</h2>
+    <div id="userBox" class="welcome"></div>
 
-<h2>🛒 Confirm Your Order</h2>
+    <div id="orderDetails"></div>
 
-<div id="userBox" class="welcome"></div>
+    <label>Delivery Type</label>
+    <select id="deliveryType" onchange="toggleDistance()">
+      <option value="pickup">Pickup</option>
+      <option value="delivery">Delivery (within 5 km)</option>
+    </select>
 
-<div id="orderDetails" class="order-box"></div>
+    <div id="distanceBox" style="display:none;">
+      <label>Distance from Kuppam Bus Stand (km)</label>
+      <input type="number" id="distance" placeholder="Enter distance in km">
+    </div>
 
-<div class="order-box">
-  <h3>Customer Details</h3>
-  <label>Name:</label>
-  <input type="text" id="custName">
+    <label>Payment Method</label>
+    <select id="paymentType">
+      <option value="cod">Cash on Delivery (₹50 advance)</option>
+      <option value="upi">UPI (Full Payment)</option>
+    </select>
 
-  <label>Phone:</label>
-  <input type="text" id="custPhone">
-
-  <label>Delivery Type:</label>
-  <select id="deliveryType" onchange="toggleDistance()">
-    <option value="pickup">Self Pickup</option>
-    <option value="delivery">Home Delivery (within 5 km)</option>
-  </select>
-
-  <div id="distanceBox" style="display: none;">
-    <label>Distance from Kuppam Bus Stand (km):</label>
-    <input type="number" id="distance" placeholder="Enter distance in km">
+    <button style="background:#ff4081;color:white;" onclick="placeOrder()">Proceed</button>
+    <div id="summaryBox"></div>
   </div>
-
-  <label>Payment Method:</label>
-  <select id="paymentType" onchange="toggleUPI()">
-    <option value="cod">Cash on Delivery / Pickup</option>
-    <option value="upi">UPI (Google Pay / PhonePe / Paytm)</option>
-  </select>
-
-  <div id="upiBox" style="display: none; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 6px;">
-    <p>📲 Pay securely using UPI:</p>
-    <a id="upiLink" href="#" target="_blank" style="color: blue; font-weight: bold;">Pay Now</a>
-  </div>
-
-  <div class="summary" id="summaryBox"></div>
-
-  <button onclick="placeOrder()">Place Order via WhatsApp</button>
-</div>
 
 <script>
-const whatsappNumber = "919441269096";
-const upiID = "6281187177@ybl";
-const loggerURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // Replace with your Google Apps Script URL
+/* --- CONFIG --- */
+const whatsappNumber = "919441269096"; // ✅ Your WhatsApp number
+const upiID = "6281187177@ybl";        // ✅ Your UPI ID
+const loggerURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // ✅ Replace with Google Apps Script URL
 
 let cart = [];
 
+/* --- LOAD CART & USER --- */
 function loadCart() {
   let urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has("items")) {
@@ -88,8 +73,6 @@ function loadCart() {
   if (user) {
     userBox.innerHTML = `Welcome, <b>${user.name}</b> 
       <button class="logout-btn" onclick="logout()">Logout</button>`;
-    document.getElementById("custName").value = user.name;
-    document.getElementById("custPhone").value = user.phone;
   } else {
     userBox.innerHTML = `Not logged in. <a href="login.html" style="color:#ff4081;">Login here</a>`;
   }
@@ -97,7 +80,7 @@ function loadCart() {
 
 function logout() {
   localStorage.removeItem("currentCustomer");
-  window.location.href = "index.html"; // Redirect to home
+  window.location.href = "index.html";
 }
 
 function toggleDistance() {
@@ -105,22 +88,20 @@ function toggleDistance() {
   document.getElementById("distanceBox").style.display = (type === "delivery") ? "block" : "none";
 }
 
-function toggleUPI() {
-  let type = document.getElementById("paymentType").value;
-  document.getElementById("upiBox").style.display = (type === "upi") ? "block" : "none";
-}
-
+/* --- MAIN ORDER FUNCTION --- */
 function placeOrder() {
-  let name = document.getElementById("custName").value.trim();
-  let phone = document.getElementById("custPhone").value.trim();
+  let currentCustomer = JSON.parse(localStorage.getItem("currentCustomer"));
+  if (!currentCustomer) {
+    alert("⚠️ Please login first to place an order!");
+    window.location.href = "login.html";
+    return;
+  }
+
+  let name = currentCustomer.name;
+  let phone = currentCustomer.phone;
   let type = document.getElementById("deliveryType").value;
   let payType = document.getElementById("paymentType").value;
   let distance = parseFloat(document.getElementById("distance").value) || 0;
-
-  if (!name || !phone) {
-    alert("Enter name & phone");
-    return;
-  }
 
   if (type === "delivery" && distance > 5) {
     alert("🚫 Delivery not available beyond 5 km from Kuppam Bus Stand.");
@@ -136,72 +117,22 @@ function placeOrder() {
   let advanceUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${advanceAmount}&cu=INR`;
   let fullUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${total}&cu=INR`;
 
-  let upiBox = document.getElementById("upiBox");
-  let upiLink = document.getElementById("upiLink");
   let summaryBox = document.getElementById("summaryBox");
 
-  // ✅ COD requires only advance ₹50
+  // ✅ COD (₹50 advance first)
   if (payType === "cod") {
-    upiBox.style.display = "block";
-    upiLink.href = advanceUpiUrl;
     summaryBox.innerHTML = `
       <b>Subtotal:</b> ₹${subtotal}<br>
       <b>Delivery:</b> ₹${deliveryCharge}<br>
       <b>Total:</b> ₹${total}<br><br>
-      ⚠️ <b>Note:</b> Cash on Delivery requires ₹50 advance payment.<br>
-      👉 <a href="${advanceUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹50 via UPI</a><br>
-      After paying, please contact us on WhatsApp to confirm order.
+      ⚠️ Cash on Delivery requires ₹50 advance.<br>
+      👉 <a href="${advanceUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹50 via UPI</a><br><br>
+      <button onclick="confirmPayment('${name}','${phone}','${cartText}',${subtotal},${deliveryCharge},${total},'COD','${type}',${distance},'Advance Paid')" style="background:#ff4081;color:white;padding:10px 15px;">
+        ✅ Confirm Payment
+      </button>
     `;
-    return; // Stop until advance is paid
+    return;
   }
 
-  // ✅ UPI must pay full total
-  if (payType === "upi") {
-    upiBox.style.display = "block";
-    upiLink.href = fullUpiUrl;
-    summaryBox.innerHTML = `
-      <b>Subtotal:</b> ₹${subtotal}<br>
-      <b>Delivery:</b> ₹${deliveryCharge}<br>
-      <b>Total:</b> ₹${total}<br><br>
-      ✅ Please pay the full amount via UPI to confirm your order.<br>
-      👉 <a href="${fullUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹${total} via UPI</a>
-    `;
-    window.open(fullUpiUrl, "_blank");
-  }
-
-  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDelivery Type: ${type}\nDistance: ${distance} km`;
-  let waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, "_blank");
-
-  // Log to Google Sheets
-  fetch(loggerURL, {
-    method: "POST",
-    body: JSON.stringify({
-      name: name,
-      phone: phone,
-      items: cartText,
-      total: total,
-      deliveryType: type,
-      paymentType: payType,
-      distance: distance,
-      notes: payType === "cod" ? "Advance Required" : "Full Paid"
-    }),
-    headers: { "Content-Type": "application/json" }
-  });
-
-  // Success message
-  document.body.innerHTML = `
-    <div style="text-align:center; padding:40px;">
-      <h2>✅ Order Placed!</h2>
-      <p>Thank you, <b>${name}</b>. We’ve received your order details.</p>
-      <p>We will confirm it shortly via WhatsApp 📱.</p>
-      <a href="/" style="color:#ff4081;">⬅️ Back to Home</a>
-    </div>
-  `;
-}
-
-window.onload = loadCart;
-</script>
-
-</body>
-</html>
+  // ✅ UPI (full total first)
+  if (payType === "upi
