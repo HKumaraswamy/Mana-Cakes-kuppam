@@ -1,21 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mana Cakes Kuppam - Menu</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Menu - Mana Cakes Kuppam</title>
+<link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav>
-    <h1>Mana Cakes Kuppam</h1>
-    <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="menu.html">Menu</a></li>
-      <li><a href="order.html">Order</a></li>
-      <li><a href="contact.html">Contact</a></li>
-    </ul>
-  </nav>
+<!-- Navbar -->
+<nav>
+  <div class="brand">
+    <div class="logo">🍰</div>
+    <div>Mana Cakes Kuppam</div>
+  </div>
+  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+  <ul id="navLinks">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html" class="active">Menu</a></li>
+    <li><a href="order.html">Order</a></li>
+    <li><a href="contact.html">Contact</a></li>
+  </ul>
+  <div class="cart-icon" onclick="toggleCart()">🛒
+    <span class="cart-badge" id="cartCount">0</span>
+  </div>
+</nav>
+
+<section>
+  <div class="container">
+    <h2>Our Menu</h2>
+    <p class="lead">Browse cakes by category or search by name</p>
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search cakes...">
+      <select id="categoryFilter">
+        <option value="all">All Categories</option>
+        <option value="Chocolate">Chocolate</option>
+        <option value="Fruit">Fruit</option>
+        <option value="Vanilla">Vanilla</option>
+        <option value="Butterscotch">Butterscotch</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="grid" id="menuItemsContainer"></div>
+  </div>
+</section>
+
+<div class="cart-sidebar" id="cartSidebar">
+  <h3>Your Cart</h3>
+  <div id="cartItems"></div>
+  <div class="cart-footer">
+    <button class="btn-checkout" onclick="checkout()">Checkout</button>
+  </div>
+</div>
+
+<footer>© Mana Cakes Kuppam • Freshly Baked</footer>
+
+<script src="script.js"></script>
+<script>
+let allItems = [];
+
+async function loadMenu() {
+  const res = await fetch("items.json");
+  allItems = await res.json();
+  displayMenu(allItems);
+}
+
+function displayMenu(items){
+  const container = document.getElementById("menuItemsContainer");
+  container.innerHTML="";
+  items.forEach(item=>{
+    container.innerHTML+=`
+      <div class="card">
+        <img class="media" src="${item.img}" alt="${item.name}">
+        <div class="pad">
+          <h3>${item.name}</h3>
+          <div><span class="price">₹${item.price}</span>${item.oldPrice?` <span class="strike">₹${item.oldPrice}</span>`:""}</div>
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn" onclick="addToCart('${item.name}',${item.price})">Add to Cart</button>
+            <button class="btn secondary" onclick="buyNow('${item.name}',${item.price})">Buy Now</button>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+function filterMenu(){
+  const searchText=document.getElementById("searchInput").value.toLowerCase();
+  const category=document.getElementById("categoryFilter").value;
+  const filtered=allItems.filter(item=>{
+    const matchesSearch=item.name.toLowerCase().includes(searchText);
+    const matchesCategory=category==="all" || (item.category && item.category===category);
+    return matchesSearch && matchesCategory;
+  });
+  displayMenu(filtered);
+}
+
+document.getElementById("searchInput").addEventListener("input", filterMenu);
+document.getElementById("categoryFilter").addEventListener("change", filterMenu);
+
+window.onload = loadMenu;
+</script>
+
+</body>
+</html>
