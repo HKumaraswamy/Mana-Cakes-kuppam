@@ -267,12 +267,7 @@ function reRenderCakes(){
     container.appendChild(add);
   }
 }
-// WhatsApp Order
-function orderWhatsApp(name,price){
-  let msg=`Hello Mana Cakes Kuppam! I want to order:\n🍰 ${name}\n💰 ₹${price}`;
-  let url=`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
-  window.open(url,"_blank");
-}
+
 // ----------- Init
 window.onload=()=>{ reRenderCakes(); if(isAdmin) enableAdminUI(); }
 </script>
