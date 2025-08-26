@@ -137,7 +137,14 @@ function saveNewCake(){
   if(!name||!price||isNaN(price)){ alert("Invalid details!"); return; } 
   if(file.files.length===0){ alert("Select image!"); return; } 
   let reader=new FileReader(); 
-  reader.onload=function(e){ cakes.push({name,price,img:e.target.result}); saveCakesToServer(); document.getElementById("addCakeForm").style.display="none"; document.getElementById("cakeName").value=""; document.getElementById("cakePrice").value=""; file.value=""; }
+  reader.onload=function(e){ 
+    cakes.push({name,price,img:e.target.result}); 
+    saveCakesToServer(); 
+    document.getElementById("addCakeForm").style.display="none"; 
+    document.getElementById("cakeName").value=""; 
+    document.getElementById("cakePrice").value=""; 
+    file.value=""; 
+  }
   reader.readAsDataURL(file.files[0]);
 }
 
@@ -170,31 +177,10 @@ function reRenderCakes(){
 
 async function loadCakesFromServer(){ 
   try{
-    let res=await fetch(`${BASE_URL}/${BIN_ID}/latest`,{headers:{"X-Master-Key":API_KEY}});
-    let data=await res.json();
-    cakes=data.record || [];
-    reRenderCakes();
-  }catch(e){ console.error("Error loading cakes:",e);}
-}
-
-async function saveCakesToServer(){ 
-  try{
-    await fetch(`${BASE_URL}/${BIN_ID}`,{
-      method:"PUT",
-      headers:{"Content-Type":"application/json","X-Master-Key":API_KEY},
-      body:JSON.stringify({ record: cakes }) // ✅ wrap in record for JSONBin
+    let res = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
+      headers: {"X-Master-Key": API_KEY}
     });
+    let data = await res.json();
+    cakes = data?.record || [];  // ✅ load persisted cakes
     reRenderCakes();
-  }catch(e){ console.error("Error saving cakes:",e);}
-}
-
-window.onload=()=>{ loadCakesFromServer(); updateCartDisplay(); if(isAdmin) enableAdminUI(); }
-</script>
-
-<footer>
-  © Mana Cakes Kuppam • Baked fresh daily <br>
-  <b>Owner:</b> H. Kumaraswamy <br>
-  <b>Mobile:</b> <a href="tel:+919441269096">+91 9441269096</a>
-</footer>
-</body>
-</html>
+  }catch(e){ console.error("Error loading cakes:",e
