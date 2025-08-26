@@ -13,7 +13,8 @@
     .total { font-weight:bold; margin-top:12px; }
     .form-group { margin-top:12px; }
     label { display:block; margin-bottom:5px; font-weight:bold; }
-    input, select { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
+    input, select, textarea { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
+    textarea { resize: vertical; }
     .btn-confirm {
       background:#25d366; 
       color:white; 
@@ -28,6 +29,15 @@
     }
     .btn-confirm:hover { background:#1ebd5a; }
     .note { color:red; font-size:14px; }
+    .upi-btn {
+      background:#ff4081;
+      color:white;
+      padding:10px;
+      border-radius:6px;
+      text-decoration:none;
+      display:inline-block;
+      margin-top:10px;
+    }
   </style>
 </head>
 <body>
@@ -46,10 +56,18 @@
     <input type="tel" id="custPhone" placeholder="Enter your phone number" required>
   </div>
   <div class="form-group">
+    <label for="custAddress">Address:</label>
+    <textarea id="custAddress" rows="3" placeholder="Enter your full delivery address"></textarea>
+  </div>
+  <div class="form-group">
     <label>Payment Method:</label>
     <input type="radio" name="payment" value="UPI" checked> UPI (Full Payment)<br>
     <input type="radio" name="payment" value="COD"> Cash on Delivery (₹150 advance required)
     <p class="note">⚠️ COD requires ₹150 advance before delivery.</p>
+  </div>
+  <div id="upiSection" style="display:none;">
+    <p>💳 Pay via UPI:</p>
+    <a href="upi://pay?pa=mana-cakes@upi&pn=Mana%20Cakes%20Kuppam&am=0&cu=INR" class="upi-btn">Pay Owner UPI</a>
   </div>
 </div>
 
@@ -87,9 +105,7 @@ orderText += `\n💰 Subtotal = ₹${total}\n`;
 // Delivery calculation
 let deliveryCharge = 0;
 function calculateDeliveryCharge(){
-  // Bakery location (Mana Cakes Kuppam)
   let bakery = { lat: 12.7480, lng: 78.3430 }; 
-
   let service = new google.maps.DistanceMatrixService();
   service.getDistanceMatrix(
     {
@@ -101,7 +117,7 @@ function calculateDeliveryCharge(){
       if(status === "OK"){
         let distanceText = response.rows[0].elements[0].distance.text;
         let distanceKm = parseFloat(distanceText);
-        deliveryCharge = Math.ceil(distanceKm * 10); // ₹10 per km
+        deliveryCharge = Math.ceil(distanceKm * 10); 
         document.getElementById("deliveryCharge").innerHTML = `🚚 Delivery Charge: ₹${deliveryCharge} (${distanceText})`;
       } else {
         document.getElementById("deliveryCharge").innerHTML = "⚠️ Unable to calculate delivery charge.";
@@ -109,11 +125,12 @@ function calculateDeliveryCharge(){
     }
   );
 }
-  
-// Confirm Order via WhatsApp
+
+// Confirm Order
 function confirmOrder(){
   let name = document.getElementById("custName").value.trim();
   let phone = document.getElementById("custPhone").value.trim();
+  let address = document.getElementById("custAddress").value.trim();
   let payment = document.querySelector('input[name="payment"]:checked').value;
 
   if(!name || !phone){
@@ -128,11 +145,22 @@ function confirmOrder(){
   }
 
   let mapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
-  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ₹${deliveryCharge}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
-  
+  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n🏠 Address: ${address}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ₹${deliveryCharge}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
+
   let whatsappURL = `https://wa.me/919441269096?text=${encodeURIComponent(msg)}`;
   window.open(whatsappURL, "_blank");
 }
+
+// Show UPI link when UPI selected
+document.querySelectorAll('input[name="payment"]').forEach(radio=>{
+  radio.addEventListener("change", function(){
+    if(this.value === "UPI"){
+      document.getElementById("upiSection").style.display = "block";
+    } else {
+      document.getElementById("upiSection").style.display = "none";
+    }
+  });
+});
 
 // Google Maps
 function initMap(){
