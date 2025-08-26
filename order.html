@@ -90,13 +90,13 @@ let data = JSON.parse(decodeURIComponent(getQueryParam("data")));
 let items = data.items;
 let location = data.location;
 
-// Show order items
+// Show order items (Product name + price + qty)
 let detailsDiv = document.getElementById("orderDetails");
 let total = 0;
 let orderText = "🛒 Order Details:\n";
 items.forEach(item=>{
-  detailsDiv.innerHTML += `<div class="order-item">🍰 ${item.name} x${item.qty} = ₹${item.price * item.qty}</div>`;
-  orderText += `🍰 ${item.name} x${item.qty} = ₹${item.price * item.qty}\n`;
+  detailsDiv.innerHTML += `<div class="order-item">🍰 ${item.name} (₹${item.price}) x${item.qty} = ₹${item.price * item.qty}</div>`;
+  orderText += `🍰 ${item.name} (₹${item.price}) x${item.qty} = ₹${item.price * item.qty}\n`;
   total += item.price * item.qty;
 });
 detailsDiv.innerHTML += `<div class="total">Subtotal: ₹${total}</div>`;
@@ -104,6 +104,7 @@ orderText += `\n💰 Subtotal = ₹${total}\n`;
 
 // Delivery calculation
 let deliveryCharge = 0;
+let deliveryText = "";
 function calculateDeliveryCharge(){
   let bakery = { lat: 12.7480, lng: 78.3430 }; 
   let service = new google.maps.DistanceMatrixService();
@@ -117,8 +118,14 @@ function calculateDeliveryCharge(){
       if(status === "OK"){
         let distanceText = response.rows[0].elements[0].distance.text;
         let distanceKm = parseFloat(distanceText);
-        deliveryCharge = Math.ceil(distanceKm * 10); 
-        document.getElementById("deliveryCharge").innerHTML = `🚚 Delivery Charge: ₹${deliveryCharge} (${distanceText})`;
+        if(distanceKm <= 1){
+          deliveryCharge = 0;
+          deliveryText = "Free Delivery";
+        } else {
+          deliveryCharge = Math.ceil(distanceKm * 10);
+          deliveryText = `₹${deliveryCharge}`;
+        }
+        document.getElementById("deliveryCharge").innerHTML = `🚚 Delivery Charge: ${deliveryText} (${distanceText})`;
       } else {
         document.getElementById("deliveryCharge").innerHTML = "⚠️ Unable to calculate delivery charge.";
       }
@@ -145,7 +152,7 @@ function confirmOrder(){
   }
 
   let mapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
-  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n🏠 Address: ${address}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ₹${deliveryCharge}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
+  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n🏠 Address: ${address}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ${deliveryText}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
 
   let whatsappURL = `https://wa.me/919441269096?text=${encodeURIComponent(msg)}`;
   window.open(whatsappURL, "_blank");
