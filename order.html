@@ -1,129 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mana Cakes Kuppam - Checkout</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Order - Mana Cakes Kuppam</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    h2 { text-align:center; color:#ff4081; }
-    .cart-items { max-width:500px; margin:auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    .cart-item { display:flex; justify-content:space-between; margin-bottom:12px; }
-    .cart-total { text-align:right; margin-top:10px; font-weight:bold; }
-    form { max-width:500px; margin:20px auto; background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-    input, select, textarea { width:100%; padding:10px; margin:8px 0; border-radius:6px; border:1px solid #ddd; }
-    button { background:#ff4081; color:#fff; border:none; padding:10px; cursor:pointer; border-radius:5px; }
-    button:hover { background:#e91e63; }
-    #upiLink { display:none; text-align:center; margin-top:10px; }
-    #upiLink a { background:#4caf50; color:#fff; padding:8px 12px; text-decoration:none; border-radius:5px; display:inline-block; }
+    body { font-family: Arial, sans-serif; padding:20px; }
+    h2 { color:#ff4081; }
+    #map { height:300px; width:100%; margin-top:20px; border-radius:8px; }
+    .order-box { border:1px solid #ddd; padding:15px; border-radius:8px; margin-bottom:20px; }
+    .order-item { margin-bottom:8px; }
+    .total { font-weight:bold; margin-top:12px; }
+    .form-group { margin-top:12px; }
+    label { display:block; margin-bottom:5px; font-weight:bold; }
+    input, select { width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:5px; }
+    .btn-confirm {
+      background:#25d366; 
+      color:white; 
+      padding:12px 20px; 
+      border:none; 
+      border-radius:8px; 
+      cursor:pointer; 
+      font-size:16px;
+      display:block;
+      margin-top:20px;
+      text-align:center;
+    }
+    .btn-confirm:hover { background:#1ebd5a; }
+    .note { color:red; font-size:14px; }
   </style>
 </head>
 <body>
 
-  <h2>🛒 Checkout</h2>
+<h2>🛒 Your Order</h2>
+<div class="order-box" id="orderDetails"></div>
 
-  <div class="cart-items" id="cartItemsContainer">
-    <!-- Cart items populated via JS -->
+<h2>👤 Customer Details</h2>
+<div class="order-box">
+  <div class="form-group">
+    <label for="custName">Name:</label>
+    <input type="text" id="custName" placeholder="Enter your name" required>
   </div>
+  <div class="form-group">
+    <label for="custPhone">Phone Number:</label>
+    <input type="tel" id="custPhone" placeholder="Enter your phone number" required>
+  </div>
+  <div class="form-group">
+    <label>Payment Method:</label>
+    <input type="radio" name="payment" value="UPI" checked> UPI (Full Payment)<br>
+    <input type="radio" name="payment" value="COD"> Cash on Delivery (₹150 advance required)
+    <p class="note">⚠️ COD requires ₹150 advance before delivery.</p>
+  </div>
+</div>
 
-  <form id="checkoutForm">
-    <input type="text" id="custName" placeholder="Your Name" required>
-    <input type="tel" id="custMobile" placeholder="Mobile Number" required>
-    <textarea id="custAddress" placeholder="Delivery Address"></textarea>
-    <button type="button" onclick="getLocation()">📍 Use My Location</button>
-    <select id="orderType">
-      <option value="Pickup">Pickup</option>
-      <option value="Delivery">Delivery (within 5 km)</option>
-    </select>
-    <input type="text" id="advance" placeholder="Advance Payment (optional)">
-    <select id="paymentMode" onchange="toggleUpi()">
-      <option value="Cash">Cash</option>
-      <option value="UPI">UPI</option>
-    </select>
-    <div id="upiLink">
-      <a id="upiPay" target="_blank">💳 Pay via UPI</a>
-    </div>
-    <button type="submit">Confirm Order</button>
-  </form>
+<h2>📍 Delivery Location</h2>
+<div id="map"></div>
+<div class="order-box">
+  <div id="deliveryCharge">Calculating delivery charge...</div>
+</div>
 
-  <script>
-    const shopLat = 12.74804;
-    const shopLon = 78.3463;
-    const yourNumber = "919876543210"; // replace with your WhatsApp number
-    const yourUpi = "yourupiid@upi";   // replace with your UPI ID
+<button class="btn-confirm" onclick="confirmOrder()">✅ Confirm Order via WhatsApp</button>
 
-    // Read cart items from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const items = JSON.parse(urlParams.get('items') || "[]");
-    const cartContainer = document.getElementById("cartItemsContainer");
+<script>
+function getQueryParam(name){
+  let urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
 
-    let total = 0;
-    if(items.length===0){
-      cartContainer.innerHTML = "<p>Your cart is empty!</p>";
-    } else {
-      items.forEach(item=>{
-        const div = document.createElement("div");
-        div.className = "cart-item";
-        div.innerHTML = `<span>${item.name} x${item.qty}</span><span>₹${item.price*item.qty}</span>`;
-        cartContainer.appendChild(div);
-        total += item.price*item.qty;
-      });
-      const totalDiv = document.createElement("div");
-      totalDiv.className = "cart-total";
-      totalDiv.textContent = "Total: ₹"+total;
-      cartContainer.appendChild(totalDiv);
-    }
+// Parse data
+let data = JSON.parse(decodeURIComponent(getQueryParam("data")));
+let items = data.items;
+let location = data.location;
 
-    // GPS delivery
-    function getLocation() {
-      if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(function(pos){
-          const lat=pos.coords.latitude;
-          const lon=pos.coords.longitude;
-          const R=6371, dLat=(lat-shopLat)*Math.PI/180, dLon=(lon-shopLon)*Math.PI/180;
-          const a=Math.sin(dLat/2)**2 + Math.cos(shopLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)**2;
-          const dist = R*(2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
-          if(dist>5){
-            alert(`❌ Delivery unavailable (${dist.toFixed(2)} km). Choose Pickup.`);
-          } else {
-            document.getElementById("custAddress").value = `https://www.google.com/maps?q=${lat},${lon}`;
-            alert(`✅ Within delivery range (${dist.toFixed(2)} km).`);
-          }
-        }, function(){ alert("⚠️ Could not get location. Enter address manually."); });
-      } else alert("⚠️ Geolocation not supported.");
-    }
+// Show order items
+let detailsDiv = document.getElementById("orderDetails");
+let total = 0;
+let orderText = "🛒 Order Details:\n";
+items.forEach(item=>{
+  detailsDiv.innerHTML += `<div class="order-item">🍰 ${item.name} x${item.qty} = ₹${item.price * item.qty}</div>`;
+  orderText += `🍰 ${item.name} x${item.qty} = ₹${item.price * item.qty}\n`;
+  total += item.price * item.qty;
+});
+detailsDiv.innerHTML += `<div class="total">Subtotal: ₹${total}</div>`;
+orderText += `\n💰 Subtotal = ₹${total}\n`;
 
-    function toggleUpi(){
-      const mode = document.getElementById("paymentMode").value;
-      const upiDiv = document.getElementById("upiLink");
-      if(mode==="UPI"){
-        document.getElementById("upiPay").href = `upi://pay?pa=${yourUpi}&pn=ManaCakes&am=&cu=INR`;
-        upiDiv.style.display="block";
+// Delivery calculation
+let deliveryCharge = 0;
+function calculateDeliveryCharge(){
+  // Bakery location (Mana Cakes Kuppam)
+  let bakery = { lat: 12.7480, lng: 78.3430 }; 
+
+  let service = new google.maps.DistanceMatrixService();
+  service.getDistanceMatrix(
+    {
+      origins: [bakery],
+      destinations: [{lat: location.lat, lng: location.lon}],
+      travelMode: 'DRIVING'
+    },
+    function(response, status){
+      if(status === "OK"){
+        let distanceText = response.rows[0].elements[0].distance.text;
+        let distanceKm = parseFloat(distanceText);
+        deliveryCharge = Math.ceil(distanceKm * 10); // ₹10 per km
+        document.getElementById("deliveryCharge").innerHTML = `🚚 Delivery Charge: ₹${deliveryCharge} (${distanceText})`;
       } else {
-        upiDiv.style.display="none";
+        document.getElementById("deliveryCharge").innerHTML = "⚠️ Unable to calculate delivery charge.";
       }
     }
+  );
+}
+  
+// Confirm Order via WhatsApp
+function confirmOrder(){
+  let name = document.getElementById("custName").value.trim();
+  let phone = document.getElementById("custPhone").value.trim();
+  let payment = document.querySelector('input[name="payment"]:checked').value;
 
-    // Submit → WhatsApp
-    document.getElementById("checkoutForm").addEventListener("submit",function(e){
-      e.preventDefault();
-      const name=document.getElementById("custName").value;
-      const mobile=document.getElementById("custMobile").value;
-      const address=document.getElementById("custAddress").value;
-      const type=document.getElementById("orderType").value;
-      const advance=document.getElementById("advance").value;
-      const payment=document.getElementById("paymentMode").value;
+  if(!name || !phone){
+    alert("⚠️ Please enter your name and phone number to confirm order.");
+    return;
+  }
 
-      let message = `🍰 *New Order* 🍰%0A`;
-      items.forEach(i=>{ message += `*${i.name}* x${i.qty} = ₹${i.price*i.qty}%0A`; });
-      message += `*Total:* ₹${total}%0A`;
-      message += `*Name:* ${name}%0A*Mobile:* ${mobile}%0A*Address:* ${address}%0A*Order Type:* ${type}%0A*Advance:* ${advance}%0A*Payment:* ${payment}`;
+  let finalTotal = total + deliveryCharge;
+  let advanceNote = "";
+  if(payment === "COD"){
+    advanceNote = "⚠️ COD requires ₹150 advance.\n";
+  }
 
-      const whatsappURL = `https://wa.me/${yourNumber}?text=${message}`;
-      window.open(whatsappURL,"_blank");
-      alert("✅ Order sent to WhatsApp! We’ll contact you soon.");
-    });
-  </script>
+  let mapsLink = `https://www.google.com/maps?q=${location.lat},${location.lon}`;
+  let msg = `👤 Customer: ${name}\n📞 Phone: ${phone}\n💳 Payment: ${payment}\n\n${orderText}🚚 Delivery Charge = ₹${deliveryCharge}\n💰 Final Total = ₹${finalTotal}\n${advanceNote}\n📍 Delivery Location:\n${mapsLink}`;
+  
+  let whatsappURL = `https://wa.me/919441269096?text=${encodeURIComponent(msg)}`;
+  window.open(whatsappURL, "_blank");
+}
+
+// Google Maps
+function initMap(){
+  let userLoc = { lat: location.lat, lng: location.lon };
+  let map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 15,
+    center: userLoc
+  });
+  new google.maps.Marker({
+    position: userLoc,
+    map: map,
+    title: "Delivery Location"
+  });
+  calculateDeliveryCharge();
+}
+</script>
+
+<!-- Google Maps API -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>
+
 </body>
 </html>
