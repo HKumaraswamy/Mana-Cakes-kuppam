@@ -60,7 +60,7 @@
 <script>
 const whatsappNumber = "919441269096";
 const upiID = "6281187177@ybl";
-const loggerURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // ⬅️ Replace with your Google Apps Script URL
+const loggerURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; // Replace with your Google Apps Script URL
 
 let cart = [];
 
@@ -116,27 +116,27 @@ function placeOrder() {
   let deliveryCharge = (type === "delivery") ? (distance <= 1 ? 0 : distance * 10) : 0;
   let total = subtotal + deliveryCharge;
 
-  let upiAdvance = 50;
-  let advanceUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${upiAdvance}&cu=INR`;
+  let advanceAmount = 50;
+  let advanceUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${advanceAmount}&cu=INR`;
   let fullUpiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${total}&cu=INR`;
 
   let upiBox = document.getElementById("upiBox");
   let upiLink = document.getElementById("upiLink");
   let summaryBox = document.getElementById("summaryBox");
 
-  // Require ₹50 advance for Pickup or COD if total < ₹50
-  if ((type === "pickup" || payType === "cod") && total < 50) {
+  // ✅ COD always requires at least ₹50 advance
+  if (payType === "cod") {
     upiBox.style.display = "block";
     upiLink.href = advanceUpiUrl;
     summaryBox.innerHTML = `
       <b>Subtotal:</b> ₹${subtotal}<br>
       <b>Delivery:</b> ₹${deliveryCharge}<br>
       <b>Total:</b> ₹${total}<br><br>
-      ⚠️ <b>Note:</b> ₹50 advance payment required for this order.<br>
+      ⚠️ <b>Note:</b> Cash on Delivery requires ₹50 advance payment.<br>
       👉 <a href="${advanceUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹50 via UPI</a><br>
-      After payment, please contact us on WhatsApp.
+      After paying, please contact us on WhatsApp to confirm order.
     `;
-    return;
+    return; // Stop until advance is paid
   }
 
   // Show UPI box and open UPI if full UPI selected
@@ -161,7 +161,7 @@ function placeOrder() {
       deliveryType: type,
       paymentType: payType,
       distance: distance,
-      notes: (type === "pickup" || payType === "cod") && total < 50 ? "Advance Required" : "Normal"
+      notes: payType === "cod" ? "Advance Required" : "Normal"
     }),
     headers: { "Content-Type": "application/json" }
   });
