@@ -107,7 +107,7 @@
 let cart = JSON.parse(localStorage.getItem("manaCart")) || [];
 let cakes = [];
 let isAdmin = localStorage.getItem("isAdmin")==="true";
-const BIN_ID = "68ad9640b0e23b3c068fc080";
+const BIN_ID = "68ada1cbd0ea881f40660f29"; // Correct BIN_ID from your JSONBin
 const API_KEY = "$2a$10$qHD76TLbOL4GHnUhRFkj5ex0XAjZVH7P4KMCWvx43okgyZr5TtR3y";
 const BASE_URL = "https://api.jsonbin.io/v3/b";
 const whatsappNumber = "919441269096";
@@ -115,17 +115,48 @@ const whatsappNumber = "919441269096";
 // ---------------- Cart ----------------
 function toggleMenu(){ document.getElementById('navLinks').classList.toggle('active'); }
 function toggleCart(){ document.getElementById('cartSidebar').classList.toggle('active'); }
-function addToCart(name, price){ let item=cart.find(c=>c.name===name); if(item){ item.qty++; } else { cart.push({name,price,qty:1}); } saveCart(); updateCartDisplay();}
+function addToCart(name, price){ 
+  let item=cart.find(c=>c.name===name); 
+  if(item){ item.qty++; } 
+  else { cart.push({name,price,qty:1}); } 
+  saveCart(); updateCartDisplay();
+}
 function removeItem(i){ cart.splice(i,1); saveCart(); updateCartDisplay(); }
-function updateCartDisplay(){ const cartItems=document.getElementById("cartItems"); const cartCount=document.getElementById("cartCount"); if(!cartItems||!cartCount) return; cartItems.innerHTML=""; let total=0; cart.forEach((item,i)=>{ total+=item.qty; cartItems.innerHTML+=`<div class="cart-item"><span>${item.name} x${item.qty}</span><span>₹${item.price*item.qty} <button onclick="removeItem(${i})">❌</button></span></div>`;}); cartCount.textContent=total; }
+function updateCartDisplay(){ 
+  const cartItems=document.getElementById("cartItems"); 
+  const cartCount=document.getElementById("cartCount"); 
+  if(!cartItems||!cartCount) return; 
+  cartItems.innerHTML=""; 
+  let total=0; 
+  cart.forEach((item,i)=>{ 
+    total+=item.qty; 
+    cartItems.innerHTML+=`<div class="cart-item"><span>${item.name} x${item.qty}</span><span>₹${item.price*item.qty} <button onclick="removeItem(${i})">❌</button></span></div>`;
+  }); 
+  cartCount.textContent=total; 
+}
 function saveCart(){ localStorage.setItem("manaCart",JSON.stringify(cart)); }
-function checkout(){ if(cart.length===0){ alert("Cart empty!"); return;} window.location.href="order.html?items="+encodeURIComponent(JSON.stringify(cart)); }
-function buyNow(name,price){ window.location.href="order.html?items="+encodeURIComponent(JSON.stringify([{name,price,qty:1}])); }
-function orderWhatsApp(name,price){ const msg = `Hello! I want to order:\n- ${name} x1 = ₹${price}\nTotal: ₹${price}`; window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank"); }
+function checkout(){ 
+  if(cart.length===0){ alert("Cart empty!"); return;} 
+  window.location.href="order.html?items="+encodeURIComponent(JSON.stringify(cart)); 
+}
+function buyNow(name,price){ 
+  window.location.href="order.html?items="+encodeURIComponent(JSON.stringify([{name,price,qty:1}])); 
+}
+function orderWhatsApp(name,price){ 
+  const msg = `Hello! I want to order:\n- ${name} x1 = ₹${price}\nTotal: ₹${price}`;
+  window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank"); 
+}
 
 // ---------------- Admin ----------------
-function adminLogin(){ let pass=prompt("Enter Owner Password:"); if(pass==="kuppam123"){ isAdmin=true; localStorage.setItem("isAdmin","true"); enableAdminUI(); alert("Admin mode ON ✅"); } else{ alert("Wrong password ❌"); } }
-function adminLogout(){ isAdmin=false; localStorage.setItem("isAdmin","false"); disableAdminUI(); alert("Logged out"); }
+function adminLogin(){ 
+  let pass=prompt("Enter Owner Password:"); 
+  if(pass==="kuppam123"){ 
+    isAdmin=true; localStorage.setItem("isAdmin","true"); enableAdminUI(); alert("Admin mode ON ✅"); 
+  } else{ alert("Wrong password ❌"); } 
+}
+function adminLogout(){ 
+  isAdmin=false; localStorage.setItem("isAdmin","false"); disableAdminUI(); alert("Logged out"); 
+}
 function enableAdminUI(){ document.getElementById("logoutBtn").style.display="inline-block"; reRenderCakes(); }
 function disableAdminUI(){ document.getElementById("logoutBtn").style.display="none"; reRenderCakes(); }
 
@@ -151,36 +182,4 @@ function saveNewCake(){
 function renderCake(cake,i){ 
   let container=document.getElementById("cakesContainer"); 
   let card=document.createElement("div"); card.className="card"; 
-  card.innerHTML=`<img class="media" src="${cake.img}" alt="${cake.name}"><div class="pad"><h3>${cake.name}</h3><div><span class="price">₹${cake.price}</span></div><div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" onclick="addToCart('${cake.name}',${cake.price})">Add to Cart</button><button class="btn secondary" onclick="buyNow('${cake.name}',${cake.price})">Buy Now</button><button class="btn success" onclick="orderWhatsApp('${cake.name}',${cake.price})">📲 WhatsApp</button>${isAdmin?`<button class="btn danger" onclick="deleteCake(${i})">❌ Delete</button>`:""}</div></div>`; 
-  container.appendChild(card);
-}
-
-function deleteCake(i){ 
-  if(confirm("Delete this cake?")){
-    cakes.splice(i,1);
-    saveCakesToServer(); // ✅ persist to JSONBin
-  }
-}
-
-function reRenderCakes(){ 
-  let container=document.getElementById("cakesContainer"); 
-  container.innerHTML=""; 
-  cakes.forEach((c,i)=>renderCake(c,i)); 
-  if(isAdmin){ 
-    let add=document.createElement("div"); 
-    add.className="add-card"; 
-    add.textContent="+"; 
-    add.onclick=()=>document.getElementById("addCakeForm").style.display="block"; 
-    container.appendChild(add);
-  } 
-}
-
-async function loadCakesFromServer(){ 
-  try{
-    let res = await fetch(`${BASE_URL}/${BIN_ID}/latest`, {
-      headers: {"X-Master-Key": API_KEY}
-    });
-    let data = await res.json();
-    cakes = data?.record || [];  // ✅ load persisted cakes
-    reRenderCakes();
-  }catch(e){ console.error("Error loading cakes:",e
+  card.innerHTML=`<img class="media" src="${cake.img}" alt="${cake.name}"><div class="pad"><h3>${cake.name}</h3><div><span class="price">₹${cake.price}</span></div><div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" onclick="addToCart('${cake.name}',${cake.price})">Add to Cart</button><button class="btn secondary" onclick="buyNow('${cake.name}',${cake.price})">Buy Now</button><button class="btn success" onclick="orderWhatsApp('${cake.name}',${cake.price
