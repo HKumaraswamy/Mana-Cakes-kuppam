@@ -36,23 +36,16 @@
       overflow-y: auto;
       z-index: 999;
     }
-    .cart-sidebar.active {
-      right: 0;
-    }
+    .cart-sidebar.active { right: 0; }
     .cart-item {
       display: flex;
       justify-content: space-between;
       margin-bottom: 12px;
-      border-bottom: 1px solid #eee;git remote add origin
+      border-bottom: 1px solid #eee;
       padding-bottom: 6px;
     }
-    .cart-item span {
-      font-size: 14px;
-    }
-    .cart-footer {
-      margin-top: 15px;
-      text-align: center;
-    }
+    .cart-item span { font-size: 14px; }
+    .cart-footer { margin-top: 15px; text-align: center; }
     .btn-checkout {
       background: #ff4081;
       color: white;
@@ -60,6 +53,24 @@
       padding: 10px 15px;
       cursor: pointer;
       border-radius: 5px;
+    }
+
+    /* Plus card */
+    .add-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 250px;
+      border: 2px dashed #bbb;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 50px;
+      color: #999;
+      transition: 0.3s;
+    }
+    .add-card:hover {
+      background: #f8f8f8;
+      color: #ff4081;
     }
   </style>
 </head>
@@ -90,61 +101,13 @@
     </div>
   </section>
 
-  <!-- Featured -->
+  <!-- Featured Cakes -->
   <section>
     <div class="container">
       <h2>Featured Cakes</h2>
-      <div class="grid" style="margin-top:14px;">
-        
-        <!-- Cake Card Example -->
-        <div class="card">
-          <img class="media" src="https://sweetandsavorymeals.com/wp-content/uploads/2020/02/black-forest-cake-recipe-SweetAndSavoryMeals4-680x991.jpg" alt="Black Forest Cake">
-          <div class="pad">
-            <h3>Black Forest Cake</h3>
-            <div><span class="price">₹350</span><span class="strike">₹400</span> <span class="badge">12% OFF</span></div>
-            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn" onclick="addToCart('Black Forest Cake',350)">Add to Cart</button>
-              <button class="btn secondary" onclick="buyNow('Black Forest Cake',350)">Buy Now</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <img class="media" src="http://funpeep.com/wp-content/uploads/2015/04/red-velvet-cake-design-ideas.jpg" alt="Butterscotch Cake">
-          <div class="pad">
-            <h3>Butterscotch Cake</h3>
-            <div><span class="price">₹370</span><span class="strike">₹420</span> <span class="badge">12% OFF</span></div>
-            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn" onclick="addToCart('Butterscotch Cake',370)">Add to Cart</button>
-              <button class="btn secondary" onclick="buyNow('Butterscotch Cake',370)">Buy Now</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <img class="media" src="https://tse4.mm.bing.net/th/id/OIP.a3JTiDqrHWh7_dCSevNxVAHaHe?pid=Api&P=0&h=180" alt="Vanilla Cake">
-          <div class="pad">
-            <h3>Vanilla Cake</h3>
-            <div><span class="price">₹310</span><span class="strike">₹350</span></div>
-            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn" onclick="addToCart('Vanilla Cake',310)">Add to Cart</button>
-              <button class="btn secondary" onclick="buyNow('Vanilla Cake',310)">Buy Now</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <img class="media" src="https://tse4.mm.bing.net/th/id/OIP.a3JTiDqrHWh7_dCSevNxVAHaHe?pid=Api&P=0&h=180" alt="Strawberry Cake">
-          <div class="pad">
-            <h3>Strawberry Cake</h3>
-            <div><span class="price">₹380</span><span class="strike">₹430</span></div>
-            <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn" onclick="addToCart('Strawberry Cake',380)">Add to Cart</button>
-              <button class="btn secondary" onclick="buyNow('Strawberry Cake',380)">Buy Now</button>
-            </div>
-          </div>
-        </div>
-
+      <div class="grid" style="margin-top:14px;" id="cakesContainer">
+        <!-- Cakes will be added dynamically -->
+        <div class="add-card" onclick="addNewCake()">+</div>
       </div>
     </div>
   </section>
@@ -168,21 +131,16 @@
     function toggleMenu(){ 
       document.getElementById('navLinks').classList.toggle('active'); 
     }
-
     function toggleCart() {
       document.getElementById('cartSidebar').classList.toggle('active');
     }
 
     function addToCart(name, price) {
       let item = cart.find(c => c.name === name);
-      if(item){
-        item.qty++;
-      } else {
-        cart.push({name, price, qty:1});
-      }
+      if(item){ item.qty++; }
+      else { cart.push({name, price, qty:1}); }
       updateCart();
     }
-
     function updateCart() {
       let cartItems = document.getElementById('cartItems');
       let cartCount = document.getElementById('cartCount');
@@ -199,58 +157,46 @@
             </span>
           </div>`;
       });
-
       cartCount.textContent = totalItems;
     }
-
-    function removeItem(index){
-      cart.splice(index,1);
-      updateCart();
-    }
+    function removeItem(index){ cart.splice(index,1); updateCart(); }
 
     function checkout(){
-      if(cart.length === 0){
-        alert("Your cart is empty!");
-        return;
-      }
-
-      if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(
-          function(position){
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-
-            // Haversine formula
-            const R = 6371; // km
-            const dLat = (lat - shopLat) * Math.PI/180;
-            const dLon = (lon - shopLon) * Math.PI/180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(shopLat*Math.PI/180)*Math.cos(lat*Math.PI/180)*Math.sin(dLon/2)**2;
-            const dist = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-
-            if(dist > 5){
-              alert(`❌ Sorry! Delivery unavailable. You are ${dist.toFixed(2)} km away. Please choose Pickup.`);
-            } else {
-              let orderUrl = "order.html?items=" + encodeURIComponent(JSON.stringify(cart));
-              window.location.href = orderUrl;
-            }
-          },
-          function(){
-            alert("⚠️ Couldn't get your location. Enter address manually on checkout page.");
-            let orderUrl = "order.html?items=" + encodeURIComponent(JSON.stringify(cart));
-            window.location.href = orderUrl;
-          }
-        );
-      } else {
-        alert("⚠️ Geolocation not supported. Enter address manually on checkout page.");
-        let orderUrl = "order.html?items=" + encodeURIComponent(JSON.stringify(cart));
-        window.location.href = orderUrl;
-      }
+      if(cart.length === 0){ alert("Your cart is empty!"); return; }
+      let orderUrl = "order.html?items=" + encodeURIComponent(JSON.stringify(cart));
+      window.location.href = orderUrl;
     }
-
     function buyNow(name, price){
       let singleItem = [{name, price, qty:1}];
       let orderUrl = "order.html?items=" + encodeURIComponent(JSON.stringify(singleItem));
       window.location.href = orderUrl;
+    }
+
+    // Add new cake dynamically
+    function addNewCake(){
+      let name = prompt("Enter Cake Name:");
+      if(!name) return;
+
+      let price = prompt("Enter Cake Price:");
+      if(!price || isNaN(price)) return alert("Invalid price!");
+
+      let img = prompt("Enter Cake Image URL:");
+      if(!img) img = "https://via.placeholder.com/250x200?text=Cake";
+
+      let container = document.getElementById("cakesContainer");
+      let card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img class="media" src="${img}" alt="${name}">
+        <div class="pad">
+          <h3>${name}</h3>
+          <div><span class="price">₹${price}</span></div>
+          <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn" onclick="addToCart('${name}',${price})">Add to Cart</button>
+            <button class="btn secondary" onclick="buyNow('${name}',${price})">Buy Now</button>
+          </div>
+        </div>`;
+      container.insertBefore(card, container.querySelector(".add-card"));
     }
   </script>
 </body>
