@@ -148,11 +148,45 @@ function renderCake(cake,i){
   container.appendChild(card);
 }
 
-function deleteCake(i){ if(confirm("Delete this cake?")){ cakes.splice(i,1); saveCakesToServer(); } }
-function reRenderCakes(){ let container=document.getElementById("cakesContainer"); container.innerHTML=""; cakes.forEach((c,i)=>renderCake(c,i)); if(isAdmin){ let add=document.createElement("div"); add.className="add-card"; add.textContent="+"; add.onclick=()=>document.getElementById("addCakeForm").style.display="block"; container.appendChild(add);} }
+function deleteCake(i){ 
+  if(confirm("Delete this cake?")){
+    cakes.splice(i,1);
+    saveCakesToServer(); // ✅ persist to JSONBin
+  }
+}
 
-async function loadCakesFromServer(){ try{ let res=await fetch(`${BASE_URL}/${BIN_ID}/latest`,{headers:{"X-Master-Key":API_KEY}}); let data=await res.json(); cakes=data.record||[]; reRenderCakes(); }catch(e){ console.error("Error loading cakes:",e);} }
-async function saveCakesToServer(){ try{ await fetch(`${BASE_URL}/${BIN_ID}`,{method:"PUT",headers:{"Content-Type":"application/json","X-Master-Key":API_KEY},body:JSON.stringify(cakes)}); reRenderCakes(); }catch(e){ console.error("Error saving cakes:",e);} }
+function reRenderCakes(){ 
+  let container=document.getElementById("cakesContainer"); 
+  container.innerHTML=""; 
+  cakes.forEach((c,i)=>renderCake(c,i)); 
+  if(isAdmin){ 
+    let add=document.createElement("div"); 
+    add.className="add-card"; 
+    add.textContent="+"; 
+    add.onclick=()=>document.getElementById("addCakeForm").style.display="block"; 
+    container.appendChild(add);
+  } 
+}
+
+async function loadCakesFromServer(){ 
+  try{
+    let res=await fetch(`${BASE_URL}/${BIN_ID}/latest`,{headers:{"X-Master-Key":API_KEY}});
+    let data=await res.json();
+    cakes=data.record || [];
+    reRenderCakes();
+  }catch(e){ console.error("Error loading cakes:",e);}
+}
+
+async function saveCakesToServer(){ 
+  try{
+    await fetch(`${BASE_URL}/${BIN_ID}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","X-Master-Key":API_KEY},
+      body:JSON.stringify({ record: cakes }) // ✅ wrap in record for JSONBin
+    });
+    reRenderCakes();
+  }catch(e){ console.error("Error saving cakes:",e);}
+}
 
 window.onload=()=>{ loadCakesFromServer(); updateCartDisplay(); if(isAdmin) enableAdminUI(); }
 </script>
