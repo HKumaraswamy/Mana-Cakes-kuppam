@@ -26,6 +26,7 @@
   </div>
 </nav>
 
+<!-- Page Title -->
 <section>
   <div class="container">
     <h2>Our Menu</h2>
@@ -43,12 +44,14 @@
   </div>
 </section>
 
+<!-- Menu Grid -->
 <section>
   <div class="container">
     <div class="grid" id="menuItemsContainer"></div>
   </div>
 </section>
 
+<!-- Cart Sidebar -->
 <div class="cart-sidebar" id="cartSidebar">
   <h3>Your Cart</h3>
   <div id="cartItems"></div>
@@ -64,21 +67,24 @@
 let allItems = [];
 
 async function loadMenu() {
-  const res = await fetch("items.json");
+  let res = await fetch("items.json");
   allItems = await res.json();
   displayMenu(allItems);
 }
 
-function displayMenu(items){
-  const container = document.getElementById("menuItemsContainer");
-  container.innerHTML="";
-  items.forEach(item=>{
-    container.innerHTML+=`
+function displayMenu(items) {
+  let container = document.getElementById("menuItemsContainer");
+  container.innerHTML = "";
+  items.forEach(item => {
+    container.innerHTML += `
       <div class="card">
         <img class="media" src="${item.img}" alt="${item.name}">
         <div class="pad">
           <h3>${item.name}</h3>
-          <div><span class="price">₹${item.price}</span>${item.oldPrice?` <span class="strike">₹${item.oldPrice}</span>`:""}</div>
+          <div>
+            <span class="price">₹${item.price}</span>
+            ${item.oldPrice ? `<span class="strike">₹${item.oldPrice}</span>` : ""}
+          </div>
           <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn" onclick="addToCart('${item.name}',${item.price})">Add to Cart</button>
             <button class="btn secondary" onclick="buyNow('${item.name}',${item.price})">Buy Now</button>
@@ -88,12 +94,12 @@ function displayMenu(items){
   });
 }
 
-function filterMenu(){
-  const searchText=document.getElementById("searchInput").value.toLowerCase();
-  const category=document.getElementById("categoryFilter").value;
-  const filtered=allItems.filter(item=>{
-    const matchesSearch=item.name.toLowerCase().includes(searchText);
-    const matchesCategory=category==="all" || (item.category && item.category===category);
+function filterMenu() {
+  let searchText = document.getElementById("searchInput").value.toLowerCase();
+  let category = document.getElementById("categoryFilter").value;
+  let filtered = allItems.filter(item => {
+    let matchesSearch = item.name.toLowerCase().includes(searchText);
+    let matchesCategory = category==="all" || (item.category && item.category===category);
     return matchesSearch && matchesCategory;
   });
   displayMenu(filtered);
@@ -104,6 +110,5 @@ document.getElementById("categoryFilter").addEventListener("change", filterMenu)
 
 window.onload = loadMenu;
 </script>
-
 </body>
 </html>

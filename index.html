@@ -68,13 +68,11 @@
 
 <script src="script.js"></script>
 <script>
-  // Initialize cart & load cakes
   window.onload = () => {
     loadCakesFromServer();
     if(localStorage.getItem("isAdmin")==="true") enableAdminUI();
     updateCartDisplay();
   }
 </script>
-
 </body>
 </html>
