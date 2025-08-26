@@ -40,6 +40,17 @@
     <input type="number" id="distance" placeholder="Enter distance in km">
   </div>
 
+  <label>Payment Method:</label>
+  <select id="paymentType" onchange="toggleUPI()">
+    <option value="cod">Cash on Delivery / Pickup</option>
+    <option value="upi">UPI (Google Pay / PhonePe / Paytm)</option>
+  </select>
+
+  <div id="upiBox" style="display:none; margin-top:10px; background:#f9f9f9; padding:10px; border-radius:6px;">
+    <p>📲 Pay securely using UPI:</p>
+    <a id="upiLink" href="#" target="_blank" style="color:blue; font-weight:bold;">Pay Now</a>
+  </div>
+
   <div class="summary" id="summaryBox"></div>
 
   <button onclick="placeOrder()">Place Order via WhatsApp</button>
@@ -47,6 +58,7 @@
 
 <script>
 const whatsappNumber = "919441269096"; // Owner number
+const upiID = "yourupiid@upi";  // 🔗 Replace with your UPI ID
 let cart = [];
 
 function loadCart(){
@@ -74,10 +86,85 @@ function toggleDistance(){
   document.getElementById("distanceBox").style.display = (type==="delivery") ? "block" : "none";
 }
 
+function toggleUPI(){
+  let type = document.getElementById("paymentType").value;
+  document.getElementById("upiBox").style.display = (type==="upi") ? "block" : "none";
+}
+
+function placeOrder() {
+  let name = document.getElementById("custName").value.trim();
+  let phone = document.getElementById("custPhone").value.trim();
+  let type = document.getElementById("deliveryType").value;
+  let payType = document.getElementById("paymentType").value;
+  let distance = parseFloat(document.getElementById("distance").value) || 0;
+
+  if (!name || !phone) {
+    alert("Enter name & phone");
+    return;
+  }
+
+  if (type === "delivery" && distance > 5) {
+    alert("🚫 Delivery not available beyond 5 km from Kuppam Bus Stand.");
+    return;
+  }
+
+  let cartText = cart.map(i => `${i.name} × ${i.qty} (₹${i.price} each)`).join(", ");
+  let subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
+  let deliveryCharge = 0;
+  if (type === "delivery") {
+    deliveryCharge = distance <= 1 ? 0 : distance * 10;
+  }
+  let total = subtotal + deliveryCharge;
+
+  // Check for self pickup prepayment requirement
+  if (type === "pickup" && total < 50) {
+    let prepayAmount = 50;
+    let upiUrl = `upi://pay?pa=6281187177@ybl&pn=ManaCakes&am=${prepayAmount}&cu=INR`;
+    document.getElementById("upiBox").style.display = "block";
+    document.getElementById("upiLink").href = upiUrl;
+    document.getElementById("summaryBox").innerHTML = `
+      <b>Subtotal:</b> ₹${subtotal}<br>
+      <b>Total:</b> ₹${total}<br>
+      ⚠️ <b>Note:</b> Self pickup orders below ₹50 require advance payment of ₹50.<br>
+      👉 <a href="${upiUrl}" target="_blank" style="color:blue; font-weight:bold;">Click here to Pay ₹50 via UPI</a><br>
+      After payment, please contact us on WhatsApp to confirm.
+    `;
+    return; // Stop here until payment is done
+  }
+
+  // Generate UPI link if needed
+  let upiAmount = total;
+  let upiUrl = `upi://pay?pa=6281187177@ybl&pn=ManaCakes&am=${upiAmount}&cu=INR`;
+  if (payType === "upi") {
+    document.getElementById("upiBox").style.display = "block";
+    document.getElementById("upiLink").href = upiUrl;
+  }
+
+  // Update order summary
+  document.getElementById("summaryBox").innerHTML = `
+    <b>Subtotal:</b> ₹${subtotal}<br>
+    <b>Delivery:</b> ₹${deliveryCharge}<br>
+    <b>Total:</b> ₹${total}<br>
+    <b>Payment:</b> ${payType === "upi" ? "UPI" : "Cash"}
+  `;
+
+  // WhatsApp Message
+  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDistance: ${distance} km`;
+  let url = "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(msg);
+
+  // Open WhatsApp order link
+  window.open(url, "_blank");
+
+  // If payment is via UPI, open payment link too
+  if (payType === "upi") {
+    window.open(upiUrl, "_blank");
+  }
+}
 function placeOrder(){
   let name = document.getElementById("custName").value.trim();
   let phone = document.getElementById("custPhone").value.trim();
   let type = document.getElementById("deliveryType").value;
+  let payType = document.getElementById("paymentType").value;
   let distance = parseFloat(document.getElementById("distance").value) || 0;
 
   if(!name || !phone){ alert("Enter name & phone"); return; }
@@ -95,16 +182,25 @@ function placeOrder(){
   }
   let total = subtotal + deliveryCharge;
 
+  // UPI link update
+  let upiUrl = `upi://pay?pa=${upiID}&pn=ManaCakes&am=${total}&cu=INR`;
+  document.getElementById("upiLink").href = upiUrl;
+
   // Summary update
   document.getElementById("summaryBox").innerHTML = `
     <b>Subtotal:</b> ₹${subtotal}<br>
     <b>Delivery:</b> ₹${deliveryCharge}<br>
-    <b>Total:</b> ₹${total}
+    <b>Total:</b> ₹${total}<br>
+    <b>Payment:</b> ${payType==="upi" ? "UPI" : "Cash"}
   `;
 
-  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nDistance: ${distance} km`;
+  let msg = `🧁 *New Order* \n\nName: ${name}\nPhone: ${phone}\nItems: ${cartText}\nSubtotal: ₹${subtotal}\nDelivery Type: ${type}\nDelivery Charge: ₹${deliveryCharge}\nTotal: ₹${total}\nPayment: ${payType.toUpperCase()}\nDistance: ${distance} km`;
   let url = "https://wa.me/"+whatsappNumber+"?text=" + encodeURIComponent(msg);
   window.open(url,"_blank");
+
+  if(payType==="upi"){ 
+    window.open(upiUrl,"_blank"); 
+  }
 }
 
 window.onload = loadCart;
