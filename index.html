@@ -15,12 +15,10 @@
   .cart-icon { cursor:pointer; font-size:22px; position:relative; }
   .cart-badge { position:absolute; top:-6px; right:-10px; background:red; color:#fff; font-size:12px; border-radius:50%; padding:2px 6px; }
 
-  /* Hero */
   section { padding:30px 20px; text-align:center; }
   section h2 { font-size:28px; color:#ff4081; margin-bottom:10px; }
   section p.lead { font-size:16px; color:#555; }
 
-  /* Cakes Grid */
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:15px; margin-top:20px; }
   .card { border:1px solid #eee; border-radius:12px; overflow:hidden; background:#fff; padding:10px; display:flex; flex-direction:column; justify-content:space-between; }
   .card img.media { width:100%; height:180px; object-fit:cover; border-radius:8px; }
@@ -31,11 +29,9 @@
   .btn.success { background:#25d366; color:#fff; }
   .btn.danger { background:#e53935; color:#fff; }
 
-  /* Add Card */
   .add-card { display:flex; align-items:center; justify-content:center; height:200px; border:2px dashed #bbb; border-radius:12px; font-size:50px; color:#999; cursor:pointer; transition:0.3s; }
   .add-card:hover { background:#f8f8f8; color:#ff4081; }
 
-  /* Cart Sidebar */
   .cart-sidebar { position:fixed; right:-400px; top:0; width:300px; height:100%; background:#fff; box-shadow:-2px 0 8px rgba(0,0,0,0.2); transition:0.3s; padding:20px; overflow-y:auto; z-index:999; }
   .cart-sidebar.active { right:0; }
   .cart-item { display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid #eee; padding-bottom:6px; }
@@ -116,64 +112,42 @@ const API_KEY = "$2a$10$qHD76TLbOL4GHnUhRFkj5ex0XAjZVH7P4KMCWvx43okgyZr5TtR3y";
 const BASE_URL = "https://api.jsonbin.io/v3/b";
 const whatsappNumber = "919441269096";
 
-// ---------------- Cart Logic ----------------
+// ---------------- Cart ----------------
 function toggleMenu(){ document.getElementById('navLinks').classList.toggle('active'); }
 function toggleCart(){ document.getElementById('cartSidebar').classList.toggle('active'); }
-
-function addToCart(name, price){
-  let item=cart.find(c=>c.name===name);
-  if(item){ item.qty++; } else { cart.push({name,price,qty:1}); }
-  saveCart(); updateCartDisplay();
-}
+function addToCart(name, price){ let item=cart.find(c=>c.name===name); if(item){ item.qty++; } else { cart.push({name,price,qty:1}); } saveCart(); updateCartDisplay();}
 function removeItem(i){ cart.splice(i,1); saveCart(); updateCartDisplay(); }
-function updateCartDisplay(){
-  const cartItems=document.getElementById("cartItems");
-  const cartCount=document.getElementById("cartCount");
-  if(!cartItems||!cartCount) return;
-  cartItems.innerHTML="";
-  let total=0;
-  cart.forEach((item,i)=>{ total+=item.qty; cartItems.innerHTML+=`<div class="cart-item"><span>${item.name} x${item.qty}</span><span>₹${item.price*item.qty} <button onclick="removeItem(${i})">❌</button></span></div>`;});
-  cartCount.textContent=total;
-}
+function updateCartDisplay(){ const cartItems=document.getElementById("cartItems"); const cartCount=document.getElementById("cartCount"); if(!cartItems||!cartCount) return; cartItems.innerHTML=""; let total=0; cart.forEach((item,i)=>{ total+=item.qty; cartItems.innerHTML+=`<div class="cart-item"><span>${item.name} x${item.qty}</span><span>₹${item.price*item.qty} <button onclick="removeItem(${i})">❌</button></span></div>`;}); cartCount.textContent=total; }
 function saveCart(){ localStorage.setItem("manaCart",JSON.stringify(cart)); }
 function checkout(){ if(cart.length===0){ alert("Cart empty!"); return;} window.location.href="order.html?items="+encodeURIComponent(JSON.stringify(cart)); }
 function buyNow(name,price){ window.location.href="order.html?items="+encodeURIComponent(JSON.stringify([{name,price,qty:1}])); }
-function orderWhatsApp(name,price){
-  const msg = `Hello! I want to order:\n- ${name} x1 = ₹${price}\nTotal: ₹${price}`;
-  window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank");
-}
+function orderWhatsApp(name,price){ const msg = `Hello! I want to order:\n- ${name} x1 = ₹${price}\nTotal: ₹${price}`; window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`,"_blank"); }
 
-// ---------------- Admin & Cakes ----------------
+// ---------------- Admin ----------------
 function adminLogin(){ let pass=prompt("Enter Owner Password:"); if(pass==="kuppam123"){ isAdmin=true; localStorage.setItem("isAdmin","true"); enableAdminUI(); alert("Admin mode ON ✅"); } else{ alert("Wrong password ❌"); } }
 function adminLogout(){ isAdmin=false; localStorage.setItem("isAdmin","false"); disableAdminUI(); alert("Logged out"); }
 function enableAdminUI(){ document.getElementById("logoutBtn").style.display="inline-block"; reRenderCakes(); }
 function disableAdminUI(){ document.getElementById("logoutBtn").style.display="none"; reRenderCakes(); }
 
-function saveNewCake(){
-  let name=document.getElementById("cakeName").value;
-  let price=document.getElementById("cakePrice").value;
-  let file=document.getElementById("cakeImage");
-  if(!name||!price||isNaN(price)){ alert("Invalid details!"); return; }
-  if(file.files.length===0){ alert("Select image!"); return; }
-  let reader=new FileReader();
-  reader.onload=function(e){
-    cakes.push({name,price,img:e.target.result});
-    saveCakesToServer();
-    document.getElementById("addCakeForm").style.display="none";
-    document.getElementById("cakeName").value="";
-    document.getElementById("cakePrice").value="";
-    file.value="";
-  }
+// ---------------- Cakes ----------------
+function saveNewCake(){ 
+  let name=document.getElementById("cakeName").value; 
+  let price=document.getElementById("cakePrice").value; 
+  let file=document.getElementById("cakeImage"); 
+  if(!name||!price||isNaN(price)){ alert("Invalid details!"); return; } 
+  if(file.files.length===0){ alert("Select image!"); return; } 
+  let reader=new FileReader(); 
+  reader.onload=function(e){ cakes.push({name,price,img:e.target.result}); saveCakesToServer(); document.getElementById("addCakeForm").style.display="none"; document.getElementById("cakeName").value=""; document.getElementById("cakePrice").value=""; file.value=""; }
   reader.readAsDataURL(file.files[0]);
 }
 
-function renderCake(cake,i){
-  let container=document.getElementById("cakesContainer");
-  let card=document.createElement("div");
-  card.className="card";
-  card.innerHTML=`<img class="media" src="${cake.img}" alt="${cake.name}"><div class="pad"><h3>${cake.name}</h3><div><span class="price">₹${cake.price}</span></div><div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" onclick="addToCart('${cake.name}',${cake.price})">Add to Cart</button><button class="btn secondary" onclick="buyNow('${cake.name}',${cake.price})">Buy Now</button><button class="btn success" onclick="orderWhatsApp('${cake.name}',${cake.price})">📲 WhatsApp</button>${isAdmin?`<button class="btn danger" onclick="deleteCake(${i})">❌ Delete</button>`:""}</div></div>`;
+function renderCake(cake,i){ 
+  let container=document.getElementById("cakesContainer"); 
+  let card=document.createElement("div"); card.className="card"; 
+  card.innerHTML=`<img class="media" src="${cake.img}" alt="${cake.name}"><div class="pad"><h3>${cake.name}</h3><div><span class="price">₹${cake.price}</span></div><div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="btn" onclick="addToCart('${cake.name}',${cake.price})">Add to Cart</button><button class="btn secondary" onclick="buyNow('${cake.name}',${cake.price})">Buy Now</button><button class="btn success" onclick="orderWhatsApp('${cake.name}',${cake.price})">📲 WhatsApp</button>${isAdmin?`<button class="btn danger" onclick="deleteCake(${i})">❌ Delete</button>`:""}</div></div>`; 
   container.appendChild(card);
 }
+
 function deleteCake(i){ if(confirm("Delete this cake?")){ cakes.splice(i,1); saveCakesToServer(); } }
 function reRenderCakes(){ let container=document.getElementById("cakesContainer"); container.innerHTML=""; cakes.forEach((c,i)=>renderCake(c,i)); if(isAdmin){ let add=document.createElement("div"); add.className="add-card"; add.textContent="+"; add.onclick=()=>document.getElementById("addCakeForm").style.display="block"; container.appendChild(add);} }
 
@@ -185,4 +159,8 @@ window.onload=()=>{ loadCakesFromServer(); updateCartDisplay(); if(isAdmin) enab
 
 <footer>
   © Mana Cakes Kuppam • Baked fresh daily <br>
-  <b>Owner:</b> H. Kumar
+  <b>Owner:</b> H. Kumaraswamy <br>
+  <b>Mobile:</b> <a href="tel:+919441269096">+91 9441269096</a>
+</footer>
+</body>
+</html>
