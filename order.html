@@ -13,12 +13,16 @@
     button { background: #ff4081; color: white; padding: 10px 15px; border: none; border-radius: 6px; margin-top: 15px; cursor: pointer; }
     button:hover { background: #e33771; }
     .summary { margin-top: 15px; background: #fdf0f5; padding: 10px; border-radius: 6px; }
+    .welcome { margin-bottom: 10px; font-weight: bold; color: #444; }
+    .logout-btn { background: #777; margin-left: 10px; }
     a { text-decoration: none; }
   </style>
 </head>
 <body>
 
 <h2>🛒 Confirm Your Order</h2>
+
+<div id="userBox" class="welcome"></div>
 
 <div id="orderDetails" class="order-box"></div>
 
@@ -77,11 +81,23 @@ function loadCart() {
   });
   details.innerHTML = html;
 
-  let user = JSON.parse(localStorage.getItem("loggedInUser"));
+  // Load logged-in user
+  let user = JSON.parse(localStorage.getItem("currentCustomer"));
+  let userBox = document.getElementById("userBox");
+
   if (user) {
+    userBox.innerHTML = `Welcome, <b>${user.name}</b> 
+      <button class="logout-btn" onclick="logout()">Logout</button>`;
     document.getElementById("custName").value = user.name;
     document.getElementById("custPhone").value = user.phone;
+  } else {
+    userBox.innerHTML = `Not logged in. <a href="login.html" style="color:#ff4081;">Login here</a>`;
   }
+}
+
+function logout() {
+  localStorage.removeItem("currentCustomer");
+  window.location.href = "index.html"; // Redirect to home
 }
 
 function toggleDistance() {
@@ -124,7 +140,7 @@ function placeOrder() {
   let upiLink = document.getElementById("upiLink");
   let summaryBox = document.getElementById("summaryBox");
 
-  // ✅ COD always requires at least ₹50 advance
+  // ✅ COD requires only advance ₹50
   if (payType === "cod") {
     upiBox.style.display = "block";
     upiLink.href = advanceUpiUrl;
@@ -139,10 +155,17 @@ function placeOrder() {
     return; // Stop until advance is paid
   }
 
-  // Show UPI box and open UPI if full UPI selected
+  // ✅ UPI must pay full total
   if (payType === "upi") {
     upiBox.style.display = "block";
     upiLink.href = fullUpiUrl;
+    summaryBox.innerHTML = `
+      <b>Subtotal:</b> ₹${subtotal}<br>
+      <b>Delivery:</b> ₹${deliveryCharge}<br>
+      <b>Total:</b> ₹${total}<br><br>
+      ✅ Please pay the full amount via UPI to confirm your order.<br>
+      👉 <a href="${fullUpiUrl}" target="_blank" style="color:blue; font-weight:bold;">Pay ₹${total} via UPI</a>
+    `;
     window.open(fullUpiUrl, "_blank");
   }
 
@@ -161,12 +184,12 @@ function placeOrder() {
       deliveryType: type,
       paymentType: payType,
       distance: distance,
-      notes: payType === "cod" ? "Advance Required" : "Normal"
+      notes: payType === "cod" ? "Advance Required" : "Full Paid"
     }),
     headers: { "Content-Type": "application/json" }
   });
 
-  // Show Success screen
+  // Success message
   document.body.innerHTML = `
     <div style="text-align:center; padding:40px;">
       <h2>✅ Order Placed!</h2>
