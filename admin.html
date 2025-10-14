@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Mana Cakes Kuppam</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: #fff5f7;
+      margin: 0;
+    }
+    header {
+      background: #ff7ea5;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    form {
+      background: white;
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: #ff7ea5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff4f80;
+    }
+    #productList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .product {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 10px;
+      text-align: center;
+      position: relative;
+    }
+    .product img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #ff4f4f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>🍰 Admin Panel - Mana Cakes Kuppam</header>
+
+  <form id="productForm">
+    <h3>Add New Product</h3>
+    <input type="text" id="name" placeholder="Product Name" required />
+    <input type="text" id="price" placeholder="Price (₹)" required />
+    <input type="file" id="photo" accept="image/*" required />
+    <button type="submit">Upload Product</button>
+  </form>
+
+  <section id="productList"></section>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // Upload product
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const price = document.getElementById("price").value;
+      const file = document.getElementById("photo").files[0];
+      if (!file) return alert("Please select an image!");
+
+      const storageRef = ref(storage, "products/" + file.name);
+      await uploadBytes(storageRef, file);
+      const photoURL = await getDownloadURL(storageRef);
+
+      await addDoc(collection(db, "products"), { name, price, photo: photoURL, fileName: file.name });
+      alert("✅ Product uploaded!");
+      e.target.reset();
+      loadProducts();
+    });
+
+    // Load and display products
+    async function loadProducts() {
+      const list = document.getElementById("productList");
+      list.innerHTML = "";
+      const snap = await getDocs(collection(db, "products"));
+      snap.forEach((d) => {
+        const p = d.data();
+        list.innerHTML += `
+          <div class="product" id="${d.id}">
+            <button class="delete-btn" onclick="deleteProduct('${d.id}', '${p.fileName}')">✖</button>
+            <img src="${p.photo}" alt="${p.name}">
+            <h4>${p.name}</h4>
+            <p>₹${p.price}</p>
+          </div>
+        `;
+      });
+    }
+
+    window.deleteProduct = async (id, fileName) => {
+      if (!confirm("Delete this product?")) return;
+      await deleteDoc(doc(db, "products", id));
+      const storageRef = ref(storage, "products/" + fileName);
+      await deleteObject(storageRef);
+      alert("🗑️ Deleted successfully!");
+      loadProducts();
+    };
+
+    loadProducts();
+  </script>
+</body>
+</html>
