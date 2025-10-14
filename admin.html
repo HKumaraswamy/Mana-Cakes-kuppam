@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mana Cakes Kuppam - Admin Panel</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: #fff5f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #ff7ea5;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    button {
+      background: #ff7ea5;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff4f80;
+    }
+    #productList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .product {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 10px;
+      text-align: center;
+      position: relative;
+    }
+    .product img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+    .action-btn {
+      margin-top: 5px;
+      width: 48%;
+    }
+    /* Popup styling */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+    }
+    .popup-content input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px; right: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <header>🍰 Mana Cakes Kuppam - Admin Panel</header>
+
+  <button id="addProductBtn" style="margin:20px;">Add New Product</button>
+  <section id="productList"></section>
+
+  <!-- Add/Edit Product Popup -->
+  <div class="popup" id="productPopup">
+    <div class="popup-content">
+      <span class="close-btn" onclick="closePopup()">✖</span>
+      <h3 id="popupTitle">Add Product</h3>
+      <input type="text" id="popupName" placeholder="Product Name" />
+      <input type="text" id="popupPrice" placeholder="Price (₹)" />
+      <input type="file" id="popupPhoto" accept="image/*" />
+      <button id="saveBtn">Save</button>
+    </div>
+  </div>
+
+  <script type="module">
+    // 🔐 Password protection
+    const correctPassword = "admin123"; // Change password
+    const entered = prompt("Enter Admin Password:");
+    if (entered !== correctPassword) {
+      alert("❌ Incorrect password! Access denied.");
+      document.body.innerHTML = "<h2 style='text-align:center;color:red;margin-top:50px;'>Access Denied ❌</h2>";
+      throw new Error("Unauthorized access");
+    }
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    let productsData = [];
+    let editId = null;
+
+    const productList = document.getElementById("productList");
+    const popup = document.getElementById("productPopup");
+    const popupTitle = document.getElementById("popupTitle");
+    const popupName = document.getElementById("popupName");
+    const popupPrice = document.getElementById("popupPrice");
+    const popupPhoto = document.getElementById("popupPhoto");
+    const saveBtn = document.getElementById("saveBtn");
+
+    document.getElementById("addProductBtn").onclick = () => openPopup();
+
+    function openPopup(product = null) {
+      popup.style.display = "flex";
+      if (product) {
+        popupTitle.innerText = "Edit Product";
+        popupName.value = product.name;
+        popupPrice.value = product.price;
+        editId = product.id;
+      } else {
+        popupTitle.innerText = "Add Product";
+        popupName.value = "";
+        popupPrice.value = "";
+        popupPhoto.value = "";
+        editId = null;
+      }
+    }
+
+    function closePopup() { popup.style.display = "none"; editId = null; }
+
+    saveBtn.onclick = async () => {
+      const name = popupName.value.trim();
+      const price = popupPrice.value.trim();
+      const file = popupPhoto.files[0];
+
+      if (!name || !price) return alert("Please fill all fields!");
+
+      if (editId) {
+        // Edit existing product
+        const docRef = doc(db, "products", editId);
+        await updateDoc(docRef, { name, price });
+
+        if (file) {
+          // Replace photo
+          const oldData = productsData.find(p => p.id === editId);
+          const storageRef = ref(storage, "products/" + file.name);
+          await uploadBytes(storageRef, file);
+          const photoURL = await getDownloadURL(storageRef);
+          await updateDoc(docRef, { photo: photoURL });
+          const oldStorageRef = ref(storage, "products/" + oldData.fileName);
+          if(oldData.fileName) await deleteObject(oldStorageRef).catch(()=>{});
+        }
+        alert("✅ Product updated!");
+      } else {
+        // Add new product
+        if (!file) return alert("Please select a photo!");
+        const storageRef = ref(storage, "products/" + file.name);
+        await uploadBytes(storageRef, file);
+        const photoURL = await getDownloadURL(storageRef);
+        await addDoc(collection(db, "products"), { name, price, photo: photoURL, fileName: file.name });
+        alert("✅ Product added!");
+      }
+
+      closePopup();
+      loadProducts();
+    };
+
+    async function loadProducts() {
+      productList.innerHTML = "";
+      const snap = await getDocs(collection(db, "products"));
+      productsData = [];
+      snap.forEach((doc) => {
+        const data = doc.data();
+        data.id = doc.id;
+        productsData.push(data);
+
+        productList.innerHTML += `
+          <div class="product">
+            <img src="${data.photo}" alt="${data.name}">
+            <h4>${data.name}</h4>
+            <p>₹${data.price}</p>
+            <button class="action-btn" onclick='openPopup(${JSON.stringify(data).replace(/'/g,"\\'")})'>Edit</button>
+            <button class="action-btn" onclick='deleteProduct("${data.id}", "${data.fileName}")'>Delete</button>
+          </div>
+        `;
+      });
+    }
+
+    window.deleteProduct = async (id, fileName) => {
+      if (!confirm("Delete this product?")) return;
+      await deleteDoc(doc(db, "products", id));
+      if (fileName) {
+        const storageRef = ref(storage, "products/" + fileName);
+        await deleteObject(storageRef).catch(()=>{});
+      }
+      alert("🗑️ Product deleted!");
+      loadProducts();
+    };
+
+    loadProducts();
+  </script>
+</body>
+</html>
