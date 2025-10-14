@@ -3,231 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mana Cakes Kuppam</title>
+  <title>Mana Cakes Kuppam - Admin Panel</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #f8f8f8; }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #2874f0;
-      padding: 10px 20px;
-      color: #fff;
-      flex-wrap: wrap;
+    body {
+      font-family: Poppins, sans-serif;
+      background: #fff5f7;
+      margin: 0;
+      padding: 0;
     }
-    .logo { font-size: 20px; font-weight: bold; }
-    .search-bar { flex: 1; margin: 0 20px; display: flex; }
-    .search-bar input { flex: 1; padding: 8px; border: none; border-radius: 4px 0 0 4px; }
-    .search-bar button { padding: 8px 16px; background: #ff9f00; color: #fff; border: none; border-radius: 0 4px 4px 0; cursor: pointer; }
-    .nav-links a { margin-left: 15px; color: #fff; text-decoration: none; font-weight: 500; cursor: pointer; padding: 6px 10px; transition: background 0.3s; }
-    .nav-links a:hover { background: rgba(255,255,255,0.2); border-radius: 4px; }
-
-    .banner { background: #ffe8cc; text-align: center; padding: 40px 20px; }
-    .banner h2 { color: #333; }
-
-    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; padding: 20px; }
-    .product-card { background: #fff; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 15px; text-align: center; position: relative; }
-    .product-card img { max-width: 100%; height: auto; margin-bottom: 8px; border-radius: 4px; }
-    .product-card button { margin-top: 8px; padding: 6px 10px; background: #2874f0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    .product-card .remove-product { background:red;margin-top:4px; }
-
-    /* Generic Modal Style */
-    .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-    .modal-content { background: #fff; padding: 20px; width: 90%; max-width: 400px; border-radius: 8px; position: relative; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-    .modal-content h2 { margin-bottom: 10px; }
-    .modal-content input { width: 100%; padding: 8px; margin: 6px 0; border: 1px solid #ccc; border-radius: 4px; }
-    .modal-content button { width: 100%; padding: 10px; margin-top: 10px; background: #2874f0; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    .close { position: absolute; top: 10px; right: 14px; font-size: 22px; cursor: pointer; color: #333; }
-    #previewImage { width: 100%; max-height: 150px; object-fit: cover; margin-top: 8px; display: none; }
-
-    section { padding:30px; }
+    header {
+      background: #ff7ea5;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    form {
+      background: white;
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background: #ff7ea5;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #ff4f80;
+    }
+    #productList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .product {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 10px;
+      text-align: center;
+    }
+    .product img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
   </style>
 </head>
 <body>
+  <header>🍰 Mana Cakes Kuppam - Admin Panel</header>
 
-<header>
-  <div class="logo">🍰 Mana Cakes Kuppam</div>
-  <div class="search-bar">
-    <input type="text" placeholder="Search for cakes, pastries and more...">
-    <button>Search</button>
-  </div>
-  <div class="nav-links">
-    <a href="#">Home</a>
-    <a href="#contact">Contact</a>
-    <a href="#address">Address</a>
-    <a id="ownerLoginBtn">Owner Login</a>
-    <a id="cartBtn">Cart 🛒</a>
-  </div>
-</header>
+  <form id="productForm">
+    <h3>Add New Product</h3>
+    <input type="text" id="name" placeholder="Product Name" required />
+    <input type="text" id="price" placeholder="Price (₹)" required />
+    <input type="file" id="photo" accept="image/*" required />
+    <button type="submit">Upload Product</button>
+  </form>
 
-<div class="banner">
-  <h2>Fresh Cakes &amp; Pastries Delivered Daily</h2>
-</div>
+  <section id="productList"></section>
 
-<div class="products" id="productsContainer"></div>
+  <script type="module">
+    // Import Firebase SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
-<section id="contact" style="background:#fff;">
-  <h2>Contact Us</h2>
-  <p>Call us at +91-9876543210 or email: support@manacakes.com</p>
-</section>
+    // ✅ Your Firebase Configuration (bakery-data-610dc)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
 
-<section id="address" style="background:#f1f1f1;">
-  <h2>Our Address</h2>
-  <p>Mana Cakes Kuppam, Main Road, Kuppam, Andhra Pradesh</p>
-</section>
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
 
-<!-- Login Modal -->
-<div class="modal" id="loginModal">
-  <div class="modal-content">
-    <span class="close" id="closeLogin">&times;</span>
-    <h2>Owner Login</h2>
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="loginSubmit">Login</button>
-  </div>
-</div>
+    // Upload Product
+    const form = document.getElementById("productForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const price = document.getElementById("price").value;
+      const file = document.getElementById("photo").files[0];
 
-<!-- Product Modal -->
-<div class="modal" id="productModal">
-  <div class="modal-content">
-    <span class="close" id="closeProduct">&times;</span>
-    <h2>Add Product</h2>
-    <input type="text" id="productName" placeholder="Product Name" />
-    <input type="number" id="productPrice" placeholder="Price" />
-    <input type="file" id="productImage" accept="image/*" />
-    <img id="previewImage" alt="Preview" />
-    <button id="addProduct">Add Product</button>
-  </div>
-</div>
+      if (!file) return alert("Please select an image!");
 
-<!-- Cart Modal -->
-<div class="modal" id="cartModal">
-  <div class="modal-content">
-    <span class="close" id="closeCart">&times;</span>
-    <h2>Your Cart</h2>
-    <div id="cartItems"></div>
-    <button onclick="checkout()">Checkout</button>
-  </div>
-</div>
+      try {
+        const storageRef = ref(storage, "products/" + file.name);
+        await uploadBytes(storageRef, file);
+        const photoURL = await getDownloadURL(storageRef);
 
-<script>
-const ownerLoginBtn = document.getElementById('ownerLoginBtn');
-const loginModal = document.getElementById('loginModal');
-const productModal = document.getElementById('productModal');
-const closeLogin = document.getElementById('closeLogin');
-const closeProduct = document.getElementById('closeProduct');
-const loginSubmit = document.getElementById('loginSubmit');
-const addProductBtn = document.getElementById('addProduct');
-const productsContainer = document.getElementById('productsContainer');
-const productImageInput = document.getElementById('productImage');
-const previewImage = document.getElementById('previewImage');
+        await addDoc(collection(db, "products"), {
+          name,
+          price,
+          photo: photoURL,
+        });
 
-const cartBtn = document.getElementById('cartBtn');
-const cartModal = document.getElementById('cartModal');
-const closeCart = document.getElementById('closeCart');
-const cartItemsDiv = document.getElementById('cartItems');
+        alert("✅ Product uploaded successfully!");
+        form.reset();
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        alert("❌ Upload failed!");
+      }
+    });
 
-let cart = [];
-let products = [];
+    // Load and Display Products
+    async function loadProducts() {
+      const productList = document.getElementById("productList");
+      productList.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "products"));
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        productList.innerHTML += `
+          <div class="product">
+            <img src="${data.photo}" alt="${data.name}" />
+            <h4>${data.name}</h4>
+            <p>₹${data.price}</p>
+          </div>
+        `;
+      });
+    }
 
-// Owner login
-ownerLoginBtn.addEventListener('click', () => { loginModal.style.display = 'flex'; });
-closeLogin.addEventListener('click', () => { loginModal.style.display = 'none'; });
-closeProduct.addEventListener('click', () => { productModal.style.display = 'none'; });
-
-loginSubmit.addEventListener('click', () => {
-  const user = document.getElementById('username').value;
-  const pass = document.getElementById('password').value;
-  if(user==='admin' && pass==='1234') {
-    loginModal.style.display='none';
-    productModal.style.display='flex';
-  } else alert('Invalid credentials');
-});
-
-// Preview image
-productImageInput.addEventListener('change', () => {
-  const file = productImageInput.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = (e) => { previewImage.src=e.target.result; previewImage.style.display='block'; };
-    reader.readAsDataURL(file);
-  } else previewImage.style.display='none';
-});
-
-// Add product
-addProductBtn.addEventListener('click', () => {
-  const name = document.getElementById('productName').value;
-  const price = document.getElementById('productPrice').value;
-  const imgSrc = previewImage.src;
-  if(!name || !price || !imgSrc){ alert('Fill all fields'); return; }
-
-  const product = {name, price, imgSrc};
-  products.push(product);
-  renderProducts();
-
-  // reset fields
-  document.getElementById('productName').value='';
-  document.getElementById('productPrice').value='';
-  productImageInput.value='';
-  previewImage.style.display='none';
-  productModal.style.display='none';
-});
-
-// Render products with owner remove option
-function renderProducts(){
-  productsContainer.innerHTML = products.map((item,index)=>`
-    <div class="product-card">
-      <img src="${item.imgSrc}" alt="${item.name}" />
-      <h3>${item.name}</h3>
-      <p>₹${item.price}</p>
-      <button onclick="addToCart(${index})">Add to Cart</button>
-      <button class="remove-product" onclick="removeProduct(${index})">Remove</button>
-    </div>
-  `).join('');
-}
-
-// Remove product by owner
-function removeProduct(index){
-  products.splice(index,1);
-  renderProducts();
-}
-
-// Add to cart
-function addToCart(index){
-  const product = products[index];
-  cart.push(product);
-  alert(product.name + " added to cart!");
-}
-
-// Cart popup
-cartBtn.addEventListener('click', () => { renderCart(); cartModal.style.display='flex'; });
-closeCart.addEventListener('click', () => { cartModal.style.display='none'; });
-
-function renderCart(){
-  if(cart.length===0){ cartItemsDiv.innerHTML="<p>Your cart is empty</p>"; return; }
-  cartItemsDiv.innerHTML = cart.map((item,index)=>`
-    <div style="display:flex;align-items:center;margin-bottom:8px;justify-content:space-between;">
-      <div style="display:flex;align-items:center;">
-        <img src="${item.imgSrc}" alt="${item.name}" style="width:40px;height:40px;border-radius:4px;margin-right:8px;">
-        <div><strong>${item.name}</strong><br>₹${item.price}</div>
-      </div>
-      <button onclick="removeCartItem(${index})" style="background:none;border:none;color:red;font-size:16px;cursor:pointer;">❌</button>
-    </div>
-  `).join('');
-}
-
-function removeCartItem(index){ cart.splice(index,1); renderCart(); }
-function checkout(){ alert("Proceeding to checkout with "+cart.length+" items."); cartModal.style.display='none'; }
-
-// Close modals on click outside
-window.addEventListener('click',(e)=>{
-  if(e.target===loginModal) loginModal.style.display='none';
-  if(e.target===productModal) productModal.style.display='none';
-  if(e.target===cartModal) cartModal.style.display='none';
-});
-</script>
-
+    loadProducts();
+  </script>
 </body>
 </html>
