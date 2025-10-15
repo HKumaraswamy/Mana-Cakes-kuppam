@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mana Cakes Kuppam - Admin Panel</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: #fff5f7;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #ff7ea5;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+    .container {
+      max-width: 500px;
+      background: white;
+      margin: 30px auto;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255, 126, 165, 0.3);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+    }
+    button {
+      background: #ff7ea5;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #ff5c8d; }
+    img.preview {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+    .success {
+      color: green;
+      margin-top: 10px;
+      text-align: center;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <header>🍰 Mana Cakes Kuppam - Admin Panel</header>
+
+  <div class="container">
+    <h3>Add New Product</h3>
+    <input type="text" id="name" placeholder="Product Name" required>
+    <input type="number" id="price" placeholder="Price (₹)" required>
+    <textarea id="description" placeholder="Product Description"></textarea>
+    <input type="file" id="imageFile" accept="image/*">
+    <img id="preview" class="preview" style="display:none;">
+    <button onclick="uploadProduct()">Upload Product</button>
+    <p id="message" class="success"></p>
+  </div>
+
+  <script type="module">
+    // ---------------- FIREBASE SETUP ----------------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    // -------------- IMAGE PREVIEW ----------------
+    const imageInput = document.getElementById("imageFile");
+    const previewImg = document.getElementById("preview");
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      if (file) {
+        previewImg.src = URL.createObjectURL(file);
+        previewImg.style.display = "block";
+      }
+    });
+
+    // -------------- UPLOAD PRODUCT ----------------
+    async function uploadProduct() {
+      const name = document.getElementById("name").value.trim();
+      const price = document.getElementById("price").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const file = document.getElementById("imageFile").files[0];
+      const message = document.getElementById("message");
+
+      if (!name || !price || !file) {
+        alert("Please fill all fields and choose an image!");
+        return;
+      }
+
+      try {
+        message.textContent = "Uploading... Please wait.";
+
+        // Upload image to Firebase Storage
+        const storageRef = ref(storage, "product-images/" + file.name);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+
+        // Save details to Firestore
+        await addDoc(collection(db, "products"), {
+          name,
+          price: parseFloat(price),
+          description,
+          imageUrl,
+          createdAt: new Date()
+        });
+
+        message.textContent = "✅ Product uploaded successfully!";
+        document.getElementById("name").value = "";
+        document.getElementById("price").value = "";
+        document.getElementById("description").value = "";
+        document.getElementById("imageFile").value = "";
+        previewImg.style.display = "none";
+      } catch (error) {
+        console.error("Upload failed:", error);
+        message.textContent = "❌ Upload failed. Check console.";
+      }
+    }
+  </script>
+
+</body>
+</html>
