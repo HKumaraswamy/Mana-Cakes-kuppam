@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mana Cakes Kuppam 🎂</title>
+  <style>
+    body{
+      font-family:Poppins,Segoe UI,Roboto,Arial;
+      background:#fff5f7;
+      margin:0;
+      padding:0;
+    }
+    header{
+      background:#ff4d6d;
+      color:white;
+      padding:14px 0;
+      text-align:center;
+      font-size:22px;
+      font-weight:600;
+      box-shadow:0 4px 8px rgba(0,0,0,.15);
+    }
+    .container{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      gap:20px;
+      padding:20px;
+      max-width:1200px;
+      margin:auto;
+    }
+    .card{
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,.1);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      transition:transform .2s;
+    }
+    .card:hover{transform:translateY(-5px);}
+    .card img{
+      width:100%;
+      height:200px;
+      object-fit:cover;
+    }
+    .info{
+      padding:14px;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .name{font-weight:600;font-size:18px;margin-bottom:6px;color:#333}
+    .price{color:#ff4d6d;font-weight:700;margin-bottom:10px;}
+    button{
+      background:#25D366;
+      color:#fff;
+      border:none;
+      padding:10px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:15px;
+      transition:background .2s;
+    }
+    button:hover{background:#1ebe5d;}
+    footer{
+      text-align:center;
+      padding:12px;
+      color:#777;
+      font-size:14px;
+      background:#fff;
+      border-top:1px solid #eee;
+      margin-top:20px;
+    }
+  </style>
+</head>
+<body>
+  <header>🍰 Mana Cakes Kuppam</header>
+
+  <div id="productContainer" class="container">
+    <p style="text-align:center;width:100%;color:#666">Loading cakes...</p>
+  </div>
+
+  <footer>
+    © 2025 Mana Cakes Kuppam. All rights reserved.
+  </footer>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // === Your Firebase Config ===
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const container = document.getElementById('productContainer');
+
+    const WHATSAPP_NUMBER = "918341234567"; // 🔹 Replace with your real WhatsApp number (e.g., 91XXXXXXXXXX)
+
+    async function loadProducts(){
+      container.innerHTML = "<p style='text-align:center;width:100%;color:#666'>Loading cakes...</p>";
+      const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      if(snap.empty){
+        container.innerHTML = "<p style='text-align:center;width:100%;color:#999'>No cakes available yet.</p>";
+        return;
+      }
+      container.innerHTML = "";
+      snap.forEach(doc=>{
+        const p = doc.data();
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${p.imageUrl}" alt="${p.name}">
+          <div class="info">
+            <div>
+              <div class="name">${p.name}</div>
+              <div class="price">₹${p.price}</div>
+            </div>
+            <button onclick="orderNow('${encodeURIComponent(p.name)}',${p.price})">Order on WhatsApp</button>
+          </div>`;
+        container.appendChild(card);
+      });
+    }
+
+    window.orderNow = (cake, price)=>{
+      const text = `Hi 👋 I want to order "${decodeURIComponent(cake)}" priced ₹${price} from Mana Cakes Kuppam.`;
+      const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+    };
+
+    loadProducts();
+  </script>
+</body>
+</html>
