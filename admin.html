@@ -1,0 +1,226 @@
+<!--
+Files included below:
+1) admin.html  - simple admin login page that redirects to upload.html (client-side check)
+2) upload.html - upload form: image preview -> upload to Firebase Storage -> save product to Firestore
+
+Instructions:
+• Put both files in the same folder as your main index.html.
+• Update the firebaseConfig object with your Firebase project's config if different.
+• Make sure Firestore and Storage rules allow writes for authenticated users or for testing, set permissive rules temporarily.
+• This is a simple client-side admin flow for convenience. For production, secure with Firebase Auth or server-side checks.
+-->
+
+<!-- ===== admin.html ===== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Login | Mana Cakes Kuppam</title>
+  <style>
+    body{font-family:Poppins,Segoe UI,Roboto,Arial;background:#fff5f7;margin:0;display:flex;align-items:center;justify-content:center;height:100vh}
+    .box{background:#fff;padding:28px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.12);width:340px;text-align:center}
+    h2{color:#ff4d6d;margin:0 0 12px}
+    input{width:100%;padding:10px;margin:8px 0;border:1px solid #e6cfd6;border-radius:8px;outline:none}
+    button{width:100%;padding:10px;border-radius:8px;border:none;background:#ff4d6d;color:#fff;font-weight:700;cursor:pointer}
+    .small{font-size:13px;color:#666;margin-top:10px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🔐 Admin Login</h2>
+    <input id="username" placeholder="Username" value="admin">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="tryLogin()">Login</button>
+    <div class="small">Use the admin credentials you configured locally.</div>
+  </div>
+
+  <script>
+    // Change these to your preferred admin credentials (client-side only)
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASS = '1234';
+
+    function tryLogin(){
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if(u === ADMIN_USER && p === ADMIN_PASS){
+        // store a short-lived flag and redirect
+        sessionStorage.setItem('mana_admin', '1');
+        window.location.href = 'upload.html';
+      } else {
+        alert('Invalid username or password');
+      }
+    }
+  </script>
+</body>
+</html>
+
+
+<!-- ===== upload.html ===== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Upload Product | Mana Cakes Kuppam</title>
+  <style>
+    body{font-family:Poppins,Segoe UI,Roboto,Arial;background:#fff5f7;margin:0;padding:20px}
+    .wrap{max-width:760px;margin:20px auto;background:#fff;border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+    h1{color:#ff4d6d;margin-top:0}
+    label{display:block;margin:12px 0 6px;font-weight:600}
+    input[type=text], input[type=number]{width:100%;padding:10px;border-radius:8px;border:1px solid #ddd}
+    input[type=file]{padding:8px}
+    .row{display:flex;gap:12px}
+    .preview{width:220px;height:160px;border-radius:10px;object-fit:cover;border:1px solid #eee}
+    button{background:#ff4d6d;color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:700}
+    .muted{color:#666;font-size:13px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .danger{background:#ccc;color:#333}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>Upload Cake</h1>
+      <div>
+        <button id="logoutBtn" class="danger">Logout</button>
+      </div>
+    </div>
+
+    <div id="not-auth" style="display:none;color:#b33;margin-bottom:12px">
+      You are not authorized. Please login from <a href="admin.html">Admin Login</a>.
+    </div>
+
+    <div id="form-area">
+      <label>Product Name</label>
+      <input id="name" type="text" placeholder="Chocolate Truffle">
+
+      <label>Price (₹)</label>
+      <input id="price" type="number" placeholder="350">
+
+      <label>Image</label>
+      <input id="imageFile" type="file" accept="image/*">
+      <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
+        <img id="imgPreview" class="preview" src="" alt="Preview" style="display:none">
+        <div class="muted">Recommended: 800x600px. Max size: 5MB.</div>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:10px">
+        <button id="uploadBtn">Upload Product</button>
+        <button id="clearBtn" class="danger">Clear</button>
+      </div>
+
+      <div id="status" class="muted" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Check admin session
+    if(sessionStorage.getItem('mana_admin') !== '1'){
+      document.getElementById('form-area').style.display = 'none';
+      document.getElementById('not-auth').style.display = 'block';
+    }
+
+    document.getElementById('logoutBtn').onclick = ()=>{
+      sessionStorage.removeItem('mana_admin');
+      window.location.href = 'index.html';
+    }
+
+    const imgFile = document.getElementById('imageFile');
+    const imgPreview = document.getElementById('imgPreview');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const status = document.getElementById('status');
+
+    imgFile.onchange = (e)=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      if(f.size > 5 * 1024 * 1024){ alert('File too large. Max 5MB.'); imgFile.value = ''; return; }
+      imgPreview.src = URL.createObjectURL(f);
+      imgPreview.style.display = 'block';
+    };
+
+    clearBtn.onclick = ()=>{
+      document.getElementById('name').value = '';
+      document.getElementById('price').value = '';
+      imgFile.value = '';
+      imgPreview.style.display = 'none';
+      status.innerText = '';
+    };
+
+    // ====== FIREBASE CONFIG & FUNCTIONS ======
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getStorage, ref as sref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+    // Replace with your firebase config (same as in index.html)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCG6vkAeA0efSZ0ANW7e4qcQkiSOe2583g",
+      authDomain: "bakery-data-610dc.firebaseapp.com",
+      projectId: "bakery-data-610dc",
+      storageBucket: "bakery-data-610dc.firebasestorage.app",
+      messagingSenderId: "373918020823",
+      appId: "1:373918020823:web:d0c1a902de7fa4f4252c92",
+      measurementId: "G-H4JT872JGR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    uploadBtn.onclick = async ()=>{
+      const name = document.getElementById('name').value.trim();
+      const price = document.getElementById('price').value.trim();
+      const file = imgFile.files[0];
+
+      if(!name || !price || !file){ alert('Please fill all fields and choose an image.'); return; }
+
+      status.innerText = 'Uploading image...';
+      uploadBtn.disabled = true;
+
+      try{
+        const stamp = Date.now();
+        const ext = file.name.split('.').pop();
+        const storagePath = `products/${stamp}.${ext}`;
+        const storageRef = sref(storage, storagePath);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on('state_changed', (snapshot)=>{
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes * 100).toFixed(0);
+          status.innerText = `Uploading image... ${progress}%`;
+        });
+
+        await uploadTask;
+        const url = await getDownloadURL(storageRef);
+
+        status.innerText = 'Saving product info...';
+
+        await addDoc(collection(db, 'products'), {
+          name: name,
+          price: Number(price),
+          imageUrl: url,
+          createdAt: serverTimestamp()
+        });
+
+        status.innerText = 'Product uploaded successfully!';
+        uploadBtn.disabled = false;
+        // Optionally clear form
+        // clearBtn.click();
+      } catch (err){
+        console.error(err);
+        alert('Upload failed: ' + (err.message || err));
+        status.innerText = 'Upload failed.';
+        uploadBtn.disabled = false;
+      }
+    };
+
+  </script>
+
+  <script>
+    // Prevent caching of the upload page while testing
+    if ('navigation' in performance && performance.getEntriesByType) {
+      // noop
+    }
+  </script>
+</body>
+</html>
