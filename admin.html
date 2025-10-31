@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - Upload Products</title>
+  <style>
+    body { font-family:Poppins,sans-serif; background:#fff5f7; margin:0; padding:0; }
+    header { background:#ff4d6d; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
+    form { background:white; margin:30px auto; width:320px; padding:20px; border-radius:15px; box-shadow:0 2px 10px rgba(0,0,0,0.2); text-align:center; }
+    input, textarea { width:100%; margin:10px 0; padding:10px; border-radius:8px; border:1px solid #ccc; }
+    button { padding:10px 20px; background:#ff4d6d; color:white; border:none; border-radius:8px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>🍰 Admin Panel</h2>
+    <button onclick="logout()">Logout</button>
+  </header>
+
+  <form id="form" onsubmit="event.preventDefault(); uploadProduct();">
+    <input id="name" placeholder="Product Name" required>
+    <input id="price" placeholder="Price" required>
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input type="file" id="image" accept="image/*" required>
+    <button type="submit">Upload</button>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const auth = getAuth(app);
+
+    // 🔒 Check login status
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // 🚪 Logout function
+    window.logout = function() {
+      signOut(auth).then(() => {
+        alert("Logged out");
+        window.location.href = "login.html";
+      });
+    }
+
+    // 📤 Upload product
+    window.uploadProduct = async function() {
+      const name = document.getElementById("name").value.trim();
+      const price = document.getElementById("price").value.trim();
+      const desc = document.getElementById("desc").value.trim();
+      const file = document.getElementById("image").files[0];
+
+      if (!name || !price || !file) {
+        alert("Please fill all fields and select image.");
+        return;
+      }
+
+      try {
+        // Upload image
+        const storageRef = ref(storage, "products/" + Date.now() + "_" + file.name);
+        await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(storageRef);
+
+        // Save to Firestore
+        await addDoc(collection(db, "products"), { name, price, desc, imageUrl });
+
+        alert("✅ Product uploaded successfully!");
+        document.getElementById("form").reset();
+      } catch (error) {
+        alert("❌ Upload failed: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
