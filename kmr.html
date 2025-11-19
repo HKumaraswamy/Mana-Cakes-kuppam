@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KMR — Fruit Shop (Full Website)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .product-img { object-fit: cover; height: 220px; width: 100%; border-radius: 0.5rem; }
+    .card { transition: transform .12s ease, box-shadow .12s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Header -->
+  <header class="bg-white shadow">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-green-500 text-white font-bold rounded-full w-10 h-10 flex items-center justify-center">K</div>
+        <div>
+          <h1 class="text-xl font-semibold">KMR</h1>
+          <p class="text-sm text-gray-500">Fresh Fruits • Local • Quality</p>
+        </div>
+      </div>
+      <nav class="hidden md:flex items-center gap-4">
+        <a href="#home" class="hover:text-green-600">Home</a>
+        <a href="#products" class="hover:text-green-600">Products</a>
+        <a href="#about" class="hover:text-green-600">About</a>
+        <a href="#contact" class="hover:text-green-600">Contact</a>
+      </nav>
+      <button id="menuBtn" class="md:hidden p-2 rounded border">Menu</button>
+    </div>
+  </header>
+
+  <!-- Mobile Nav -->
+  <div id="mobileNav" class="hidden bg-white border-b">
+    <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col gap-2">
+      <a href="#home" class="py-1">Home</a>
+      <a href="#products" class="py-1">Products</a>
+      <a href="#about" class="py-1">About</a>
+      <a href="#contact" class="py-1">Contact</a>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section id="home" class="max-w-6xl mx-auto px-4 py-10">
+    <div class="grid md:grid-cols-2 gap-6 items-center">
+      <div>
+        <h2 class="text-3xl font-bold mb-3">Welcome to <span class="text-green-600">KMR</span> — Fresh Fruits Delivered</h2>
+        <p class="text-gray-600 mb-4">Handpicked fruits sourced locally. High quality, fresh, and ready to enjoy. Perfect for families, shops, and small businesses.</p>
+        <a href="#products" class="inline-block bg-green-600 text-white px-4 py-2 rounded shadow hover:opacity-90">Shop Products</a>
+      </div>
+      <div>
+        <div class="rounded-lg overflow-hidden shadow">
+          <!-- Replace this image with your hero image: use Google Drive direct image link when adding product or replace this src -->
+          <img src="https://via.placeholder.com/800x420?text=KMR+Fresh+Fruits" alt="Fresh fruits" class="w-full h-64 object-cover">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products with Add button and Admin (local-only) -->
+  <section id="products" class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-2xl font-semibold">Our Products</h3>
+      <div class="flex items-center gap-3">
+        <button id="openAdd" class="bg-green-600 text-white px-3 py-1 rounded text-xl leading-none">+</button>
+        <button id="clearAll" class="bg-red-500 text-white px-3 py-1 rounded text-sm">Clear All</button>
+      </div>
+    </div>
+
+    <!-- Products grid -->
+    <div id="productGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Product cards will be injected here -->
+    </div>
+
+    <!-- Add Product Modal (client-side localStorage admin) -->
+    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-40 hidden items-center justify-center p-4">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
+        <h4 class="text-lg font-semibold mb-3">Add New Product</h4>
+        <form id="addForm" class="space-y-3">
+          <div>
+            <label class="text-sm">Product Name</label>
+            <input id="pName" class="w-full border p-2 rounded" required />
+          </div>
+          <div>
+            <label class="text-sm">Price (e.g., ₹120 / kg)</label>
+            <input id="pPrice" class="w-full border p-2 rounded" required />
+          </div>
+          <div>
+            <label class="text-sm">Image URL (Google Drive direct link or any image URL)</label>
+            <input id="pImage" class="w-full border p-2 rounded" placeholder="https://drive.google.com/uc?export=view&id=FILE_ID" />
+            <p class="text-xs text-gray-500 mt-1">Tip: Use Google Drive direct link: <code>https://drive.google.com/uc?export=view&amp;id=FILE_ID</code></p>
+          </div>
+          <div class="flex items-center gap-2 justify-end">
+            <button type="button" id="closeAdd" class="px-3 py-1 rounded border">Cancel</button>
+            <button type="submit" class="bg-green-600 text-white px-3 py-1 rounded">Add Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- About -->
+  <section id="about" class="max-w-6xl mx-auto px-4 py-8">
+    <h3 class="text-2xl font-semibold mb-3">About KMR</h3>
+    <p class="text-gray-600 mb-4">KMR is a local fruit supplier based in Kuppam. We supply fresh, high-quality fruits to households and small shops. We focus on quick delivery and honest pricing.</p>
+  </section>
+
+  <!-- Contact / Footer -->
+  <footer id="contact" class="bg-white border-t mt-10">
+    <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between gap-6">
+      <div>
+        <h5 class="font-semibold">Contact KMR</h5>
+        <p class="text-sm text-gray-600">Phone: +91-XXXXXXXXXX</p>
+        <p class="text-sm text-gray-600">Email: info@kmrfruits.example</p>
+      </div>
+      <div>
+        <h5 class="font-semibold">Address</h5>
+        <p class="text-sm text-gray-600">Your street, Kuppam, Andhra Pradesh</p>
+      </div>
+      <div>
+        <h5 class="font-semibold">Follow</h5>
+        <p class="text-sm text-gray-600">Instagram | WhatsApp</p>
+      </div>
+    </div>
+    <div class="text-center text-xs text-gray-500 py-3">© <span id="year"></span> KMR • All rights reserved</div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileNav = document.getElementById('mobileNav');
+    menuBtn?.addEventListener('click', () => {
+      mobileNav.classList.toggle('hidden');
+    });
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Product admin (localStorage)
+    const sampleProducts = [
+      {id: 'p1', name: 'Fresh Apples', price: '₹120 / kg', image: 'https://via.placeholder.com/600x400?text=Apples'},
+      {id: 'p2', name: 'Alphonso Mangoes', price: '₹250 / kg', image: 'https://via.placeholder.com/600x400?text=Mangoes'},
+      {id: 'p3', name: 'Yellow Bananas', price: '₹40 / dozen', image: 'https://via.placeholder.com/600x400?text=Bananas'}
+    ];
+
+    const STORAGE_KEY = 'kmr_products_v1';
+
+    function loadProducts(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleProducts));
+        return sampleProducts;
+      }
+      try{ return JSON.parse(raw); } catch(e){ localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleProducts)); return sampleProducts; }
+    }
+
+    function saveProducts(list){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function renderProducts(){
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = '';
+      const products = loadProducts();
+      if(products.length === 0){
+        grid.innerHTML = '<div class="text-center col-span-full text-gray-500">No products yet. Click + to add.</div>';
+        return;
+      }
+      products.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-4 rounded-lg shadow-sm card relative';
+        card.innerHTML = `
+          <div class="mb-3">
+            <img src="${p.image}" alt="${p.name}" class="product-img" onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'" />
+          </div>
+          <h4 class="font-semibold">${p.name}</h4>
+          <p class="text-sm text-gray-500 mb-2">${p.price}</p>
+          <div class="flex items-center justify-between">
+            <div class="font-bold">${p.price.includes('₹') ? p.price : p.price}</div>
+            <div class="flex items-center gap-2">
+              <button data-id="${p.id}" class="deleteBtn bg-red-500 text-white px-3 py-1 rounded text-sm">Delete</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // attach delete handlers
+      document.querySelectorAll('.deleteBtn').forEach(b => b.addEventListener('click', (e)=>{
+        const id = e.currentTarget.dataset.id;
+        const list = loadProducts().filter(x=>x.id !== id);
+        saveProducts(list);
+        renderProducts();
+      }));
+    }
+
+    // Modal controls
+    const addModal = document.getElementById('addModal');
+    const openAdd = document.getElementById('openAdd');
+    const closeAdd = document.getElementById('closeAdd');
+    const addForm = document.getElementById('addForm');
+
+    openAdd?.addEventListener('click', ()=> addModal.classList.remove('hidden'));
+    closeAdd?.addEventListener('click', ()=> addModal.classList.add('hidden'));
+    addModal?.addEventListener('click', (e)=>{ if(e.target === addModal) addModal.classList.add('hidden'); });
+
+    addForm?.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const name = document.getElementById('pName').value.trim();
+      const price = document.getElementById('pPrice').value.trim();
+      const image = document.getElementById('pImage').value.trim() || 'https://via.placeholder.com/600x400?text=No+Image';
+      if(!name || !price) return alert('Please fill name and price');
+      const id = 'p'+Date.now();
+      const list = loadProducts();
+      list.unshift({id,name,price,image});
+      saveProducts(list);
+      renderProducts();
+      addModal.classList.add('hidden');
+      addForm.reset();
+    });
+
+    // Clear all
+    document.getElementById('clearAll')?.addEventListener('click', ()=>{
+      if(!confirm('Clear all products? This will remove them from your browser storage.')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderProducts();
+    });
+
+    // initial render
+    renderProducts();
+  </script>
+
+  <!-- Usage NOTES (keep for yourself):
+    - This site is a single-file static website. To publish:
+      1) Save this file as 'index.html'
+      2) Upload to GoDaddy: public_html/index.html OR
+         Upload to GitHub Pages / Netlify (free hosting)
+    - To use Google Drive images:
+      1) Upload image to Google Drive in a folder you set to 'Anyone with link'
+      2) Get share link: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+      3) Convert: https://drive.google.com/uc?export=view&id=FILE_ID
+      4) When adding a product (click +) paste the converted link in Image URL field
+    - Products are stored in the browser (localStorage). No server or database required.
+    - If you want server-side storage (so products persist across devices), ask and I will add a simple backend + MySQL or Firebase option.
+  -->
+
+</body>
+</html>
